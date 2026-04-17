@@ -1,128 +1,180 @@
 <!doctype html>
 <html lang="es" class="h-full">
- <head>
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Server Learning Hub</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
-html, body { height: 100%; margin: 0; }
-* { box-sizing: border-box; }
-body { font-family: 'DM Sans', sans-serif; }
-.mono { font-family: 'Space Mono', monospace; }
-.card-flip { perspective: 1000px; }
-.card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
-.card-inner.flipped { transform: rotateY(180deg); }
-.card-front, .card-back { backface-visibility: hidden; position: absolute; inset: 0; }
-.card-back { transform: rotateY(180deg); }
-@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-@keyframes packet-move { 0% { left: 0%; } 100% { left: calc(100% - 12px); } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.anim-fade { animation: fadeIn 0.4s ease-out; }
-.pulse-dot { animation: pulse-dot 1.5s infinite; }
-.packet { animation: packet-move 2s linear infinite; }
-.tab-active { border-bottom: 3px solid; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-.progress-ring { transition: stroke-dashoffset 0.5s ease; }
-</style>
-  <style>body { box-sizing: border-box; }</style>
- </head>
- <body class="h-full overflow-auto" style="background: #0f172a; color: #e2e8f0;">
-  <div id="app" class="w-full h-full flex flex-col"><!-- Header -->
-   <header class="w-full px-6 py-4 flex items-center justify-between" style="background: #1e293b; border-bottom: 1px solid #334155;">
-    <div class="flex items-center gap-3">
-     <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #06b6d4;"><i data-lucide="server" style="width:22px;height:22px;color:#0f172a;"></i>
-     </div>
-     <div>
-      <h1 id="app-title" class="text-lg font-bold mono" style="color:#06b6d4;">Server Learning Hub</h1>
-      <p id="welcome-text" class="text-xs" style="color:#94a3b8;">Aprende cómo funcionan los servidores</p>
-     </div>
-    </div>
-    <div id="stats-bar" class="flex items-center gap-4 text-xs mono" style="color:#94a3b8;"><span>🃏 <span id="stat-mastered">0</span> dominadas</span> <span>📊 <span id="stat-seen">0</span> vistas</span>
-    </div>
-   </header><!-- Nav Tabs -->
-   <nav class="w-full flex px-6 gap-1" style="background:#1e293b;"><button onclick="switchTab('flashcards')" id="tab-flashcards" class="px-4 py-3 text-sm font-semibold tab-active" style="color:#06b6d4; border-color:#06b6d4;"> <i data-lucide="layers" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Flashcards </button> <button onclick="switchTab('quiz')" id="tab-quiz" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> <i data-lucide="help-circle" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Test </button> <button onclick="switchTab('visual')" id="tab-visual" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> <i data-lucide="activity" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Simulador </button> <button onclick="switchTab('glossary')" id="tab-glossary" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> <i data-lucide="book-open" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Glosario </button>
-   </nav><!-- Content -->
-   <main class="flex-1 w-full overflow-auto p-6"><!-- FLASHCARDS -->
-    <section id="section-flashcards" class="anim-fade max-w-2xl mx-auto">
-     <div class="flex items-center justify-between mb-4">
-      <p class="text-sm" style="color:#94a3b8;">Tarjeta <span id="fc-current">1</span> de <span id="fc-total">0</span></p>
-      <div class="flex gap-2"><button onclick="prevCard()" class="px-3 py-1 rounded text-sm" style="background:#334155;color:#e2e8f0;">← Anterior</button> <button onclick="nextCard()" class="px-3 py-1 rounded text-sm" style="background:#06b6d4;color:#0f172a;font-weight:600;">Siguiente →</button>
-      </div>
-     </div>
-     <div class="card-flip w-full" style="height:340px;cursor:pointer;" onclick="flipCard()">
-      <div id="card-inner" class="card-inner w-full h-full relative">
-       <div class="card-front rounded-2xl p-8 flex flex-col items-center justify-center text-center" style="background: linear-gradient(135deg, #1e293b, #0f2a3b); border: 1px solid #06b6d4;">
-        <div class="mb-4 w-14 h-14 rounded-full flex items-center justify-center" style="background:rgba(6,182,212,0.15);"><i data-lucide="help-circle" style="width:28px;height:28px;color:#06b6d4;"></i>
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+    .mono { font-family: 'Space Mono', monospace; }
+    .card-flip { perspective: 1000px; }
+    .card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back { backface-visibility: hidden; position: absolute; inset: 0; }
+    .card-back { transform: rotateY(180deg); }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @keyframes packet-move { 0% { left: 0%; } 100% { left: calc(100% - 12px); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .anim-fade { animation: fadeIn 0.4s ease-out; }
+    .pulse-dot { animation: pulse-dot 1.5s infinite; }
+    .packet { animation: packet-move 2s linear infinite; }
+    .tab-active { border-bottom: 3px solid; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .progress-ring { transition: stroke-dashoffset 0.5s ease; }
+  </style>
+</head>
+<body class="h-full overflow-auto" style="background: #0f172a; color: #e2e8f0;">
+  <div id="app" class="w-full h-full flex flex-col">
+    <!-- Header -->
+    <header class="w-full px-6 py-4 flex items-center justify-between" style="background: #1e293b; border-bottom: 1px solid #334155;">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #06b6d4;">
+          <i data-lucide="server" style="width:22px;height:22px;color:#0f172a;"></i>
         </div>
-        <p id="fc-question" class="text-xl font-bold" style="color:#f1f5f9;"></p>
-        <p class="text-xs mt-4 mono" style="color:#06b6d4;">Toca para ver la respuesta</p>
-       </div>
-       <div class="card-back rounded-2xl p-8 flex flex-col items-center justify-center text-center" style="background: linear-gradient(135deg, #06292e, #1e293b); border: 1px solid #2dd4bf;">
-        <div class="mb-4 w-14 h-14 rounded-full flex items-center justify-center" style="background:rgba(45,212,191,0.15);"><i data-lucide="check-circle" style="width:28px;height:28px;color:#2dd4bf;"></i>
+        <div>
+          <h1 id="app-title" class="text-lg font-bold mono" style="color:#06b6d4;">Server Learning Hub</h1>
+          <p id="welcome-text" class="text-xs" style="color:#94a3b8;">Aprende cómo funcionan los servidores</p>
         </div>
-        <p id="fc-answer" class="text-lg" style="color:#f1f5f9;"></p>
-       </div>
       </div>
-     </div>
-     <div class="flex justify-center gap-3 mt-5"><button onclick="markCard(false)" class="px-5 py-2 rounded-lg text-sm font-semibold" style="background:#334155;color:#f87171;">✗ Repetir</button> <button onclick="markCard(true)" class="px-5 py-2 rounded-lg text-sm font-semibold" style="background:#334155;color:#2dd4bf;">✓ Dominada</button>
-     </div>
-    </section><!-- QUIZ -->
-    <section id="section-quiz" class="anim-fade max-w-2xl mx-auto hidden">
-     <div id="quiz-start" class="text-center py-12">
-      <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background:rgba(6,182,212,0.15);"><i data-lucide="brain" style="width:40px;height:40px;color:#06b6d4;"></i>
+      <div id="stats-bar" class="flex items-center gap-4 text-xs mono" style="color:#94a3b8;">
+        <span>🃏 <span id="stat-mastered">0</span> dominadas</span> 
+        <span>📊 <span id="stat-seen">0</span> vistas</span>
       </div>
-      <h2 class="text-2xl font-bold mb-2" style="color:#f1f5f9;">Test de Servidores</h2>
-      <p class="mb-6 text-sm" style="color:#94a3b8;">10 preguntas aleatorias para evaluar tu conocimiento</p><button onclick="startQuiz()" class="px-8 py-3 rounded-xl font-bold text-base" style="background:#06b6d4;color:#0f172a;">Comenzar Test</button>
-     </div>
-     <div id="quiz-active" class="hidden">
-      <div class="flex items-center justify-between mb-4">
-       <p class="text-sm mono" style="color:#94a3b8;">Pregunta <span id="q-num">1</span>/10</p>
-       <p class="text-sm mono" style="color:#06b6d4;">Puntos: <span id="q-score">0</span></p>
-      </div>
-      <div class="w-full rounded-full h-2 mb-6" style="background:#334155;">
-       <div id="q-progress" class="h-2 rounded-full transition-all" style="background:#06b6d4;width:10%;"></div>
-      </div>
-      <div class="rounded-2xl p-6 mb-4" style="background:#1e293b;border:1px solid #334155;">
-       <p id="q-text" class="text-lg font-semibold mb-1" style="color:#f1f5f9;"></p>
-      </div>
-      <div id="q-options" class="grid gap-3"></div>
-      <div id="q-feedback" class="hidden mt-4 rounded-xl p-4 text-sm"></div><button id="q-next" onclick="nextQuestion()" class="hidden mt-4 w-full py-3 rounded-xl font-bold" style="background:#06b6d4;color:#0f172a;">Siguiente Pregunta</button>
-     </div>
-     <div id="quiz-result" class="hidden text-center py-10">
-      <div class="w-24 h-24 mx-auto mb-4 relative">
-       <svg viewbox="0 0 100 100" class="w-full h-full -rotate-90"><circle cx="50" cy="50" r="42" fill="none" stroke="#334155" stroke-width="8" /> <circle id="result-ring" cx="50" cy="50" r="42" fill="none" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" class="progress-ring" />
-       </svg><span id="result-pct" class="absolute inset-0 flex items-center justify-center text-2xl font-bold mono" style="color:#06b6d4;"></span>
-      </div>
-      <h2 id="result-msg" class="text-xl font-bold mb-2" style="color:#f1f5f9;"></h2>
-      <p id="result-detail" class="text-sm mb-6" style="color:#94a3b8;"></p><button onclick="startQuiz()" class="px-8 py-3 rounded-xl font-bold" style="background:#06b6d4;color:#0f172a;">Reintentar</button>
-     </div>
-    </section><!-- VISUAL SIMULATOR -->
-    <section id="section-visual" class="anim-fade max-w-3xl mx-auto hidden">
-     <h2 class="text-xl font-bold mb-1" style="color:#f1f5f9;">Simulador Interactivo</h2>
-     <p class="text-sm mb-5" style="color:#94a3b8;">Observa cómo fluyen las peticiones entre cliente y servidor</p><!-- Scenario selector -->
-     <div class="flex gap-2 mb-6 flex-wrap"><button onclick="setScenario('http')" id="sc-http" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#06b6d4;color:#0f172a;">HTTP Request</button> <button onclick="setScenario('dns')" id="sc-dns" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">DNS Lookup</button> <button onclick="setScenario('lb')" id="sc-lb" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">Load Balancer</button> <button onclick="setScenario('db')" id="sc-db" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">Base de Datos</button>
-     </div><!-- Simulation canvas -->
-     <div id="sim-container" class="rounded-2xl p-6 relative overflow-hidden" style="background:#1e293b;border:1px solid #334155;min-height:320px;"><!-- Filled by JS -->
-     </div><!-- Step explanation -->
-     <div id="sim-steps" class="mt-4 rounded-xl p-4" style="background:#1e293b;border:1px solid #334155;">
-      <h3 class="font-bold text-sm mb-2" style="color:#06b6d4;">Pasos del proceso:</h3>
-      <ol id="sim-step-list" class="text-sm space-y-1" style="color:#94a3b8;"></ol>
-     </div><button onclick="replayScenario()" class="mt-3 px-6 py-2 rounded-lg font-semibold text-sm" style="background:#334155;color:#06b6d4;"> <i data-lucide="refresh-cw" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Repetir animación </button>
-    </section><!-- GLOSSARY -->
-    <section id="section-glossary" class="anim-fade max-w-2xl mx-auto hidden">
-     <h2 class="text-xl font-bold mb-1" style="color:#f1f5f9;">Glosario de Servidores</h2>
-     <p class="text-sm mb-5" style="color:#94a3b8;">Términos clave que debes conocer</p><input id="glossary-search" type="text" placeholder="Buscar término..." oninput="filterGlossary()" class="w-full px-4 py-3 rounded-xl mb-4 text-sm" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;outline:none;">
-     <div id="glossary-list" class="space-y-2"></div>
-    </section>
-   </main>
+    </header>
+
+    <!-- Nav Tabs -->
+    <nav class="w-full flex px-6 gap-1" style="background:#1e293b;">
+      <button onclick="switchTab('flashcards')" id="tab-flashcards" class="px-4 py-3 text-sm font-semibold tab-active" style="color:#06b6d4; border-color:#06b6d4;"> 
+        <i data-lucide="layers" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Flashcards 
+      </button> 
+      <button onclick="switchTab('quiz')" id="tab-quiz" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> 
+        <i data-lucide="help-circle" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Test 
+      </button> 
+      <button onclick="switchTab('visual')" id="tab-visual" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> 
+        <i data-lucide="activity" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Simulador 
+      </button> 
+      <button onclick="switchTab('glossary')" id="tab-glossary" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> 
+        <i data-lucide="book-open" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Glosario 
+      </button>
+    </nav>
+
+    <!-- Content -->
+    <main class="flex-1 w-full overflow-auto p-6">
+      
+      <!-- FLASHCARDS -->
+      <section id="section-flashcards" class="anim-fade max-w-2xl mx-auto">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm" style="color:#94a3b8;">Tarjeta <span id="fc-current">1</span> de <span id="fc-total">0</span></p>
+          <div class="flex gap-2">
+            <button onclick="prevCard()" class="px-3 py-1 rounded text-sm" style="background:#334155;color:#e2e8f0;">← Anterior</button> 
+            <button onclick="nextCard()" class="px-3 py-1 rounded text-sm" style="background:#06b6d4;color:#0f172a;font-weight:600;">Siguiente →</button>
+          </div>
+        </div>
+        <div class="card-flip w-full" style="height:340px;cursor:pointer;" onclick="flipCard()">
+          <div id="card-inner" class="card-inner w-full h-full relative">
+            <div class="card-front rounded-2xl p-8 flex flex-col items-center justify-center text-center" style="background: linear-gradient(135deg, #1e293b, #0f2a3b); border: 1px solid #06b6d4;">
+              <div class="mb-4 w-14 h-14 rounded-full flex items-center justify-center" style="background:rgba(6,182,212,0.15);">
+                <i data-lucide="help-circle" style="width:28px;height:28px;color:#06b6d4;"></i>
+              </div>
+              <p id="fc-question" class="text-xl font-bold" style="color:#f1f5f9;"></p>
+              <p class="text-xs mt-4 mono" style="color:#06b6d4;">Toca para ver la respuesta</p>
+            </div>
+            <div class="card-back rounded-2xl p-8 flex flex-col items-center justify-center text-center" style="background: linear-gradient(135deg, #06292e, #1e293b); border: 1px solid #2dd4bf;">
+              <div class="mb-4 w-14 h-14 rounded-full flex items-center justify-center" style="background:rgba(45,212,191,0.15);">
+                <i data-lucide="check-circle" style="width:28px;height:28px;color:#2dd4bf;"></i>
+              </div>
+              <p id="fc-answer" class="text-lg" style="color:#f1f5f9;"></p>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-center gap-3 mt-5">
+          <button onclick="markCard(false)" class="px-5 py-2 rounded-lg text-sm font-semibold" style="background:#334155;color:#f87171;">✗ Repetir</button> 
+          <button onclick="markCard(true)" class="px-5 py-2 rounded-lg text-sm font-semibold" style="background:#334155;color:#2dd4bf;">✓ Dominada</button>
+        </div>
+      </section>
+
+      <!-- QUIZ -->
+      <section id="section-quiz" class="anim-fade max-w-2xl mx-auto hidden">
+        <div id="quiz-start" class="text-center py-12">
+          <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background:rgba(6,182,212,0.15);">
+            <i data-lucide="brain" style="width:40px;height:40px;color:#06b6d4;"></i>
+          </div>
+          <h2 class="text-2xl font-bold mb-2" style="color:#f1f5f9;">Test de Servidores</h2>
+          <p class="mb-6 text-sm" style="color:#94a3b8;">10 preguntas aleatorias para evaluar tu conocimiento</p>
+          <button onclick="startQuiz()" class="px-8 py-3 rounded-xl font-bold text-base" style="background:#06b6d4;color:#0f172a;">Comenzar Test</button>
+        </div>
+        <div id="quiz-active" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-sm mono" style="color:#94a3b8;">Pregunta <span id="q-num">1</span>/10</p>
+            <p class="text-sm mono" style="color:#06b6d4;">Puntos: <span id="q-score">0</span></p>
+          </div>
+          <div class="w-full rounded-full h-2 mb-6" style="background:#334155;">
+            <div id="q-progress" class="h-2 rounded-full transition-all" style="background:#06b6d4;width:10%;"></div>
+          </div>
+          <div class="rounded-2xl p-6 mb-4" style="background:#1e293b;border:1px solid #334155;">
+            <p id="q-text" class="text-lg font-semibold mb-1" style="color:#f1f5f9;"></p>
+          </div>
+          <div id="q-options" class="grid gap-3"></div>
+          <div id="q-feedback" class="hidden mt-4 rounded-xl p-4 text-sm"></div>
+          <button id="q-next" onclick="nextQuestion()" class="hidden mt-4 w-full py-3 rounded-xl font-bold" style="background:#06b6d4;color:#0f172a;">Siguiente Pregunta</button>
+        </div>
+        <div id="quiz-result" class="hidden text-center py-10">
+          <div class="w-24 h-24 mx-auto mb-4 relative">
+            <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#334155" stroke-width="8" /> 
+              <circle id="result-ring" cx="50" cy="50" r="42" fill="none" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" class="progress-ring" />
+            </svg>
+            <span id="result-pct" class="absolute inset-0 flex items-center justify-center text-2xl font-bold mono" style="color:#06b6d4;"></span>
+          </div>
+          <h2 id="result-msg" class="text-xl font-bold mb-2" style="color:#f1f5f9;"></h2>
+          <p id="result-detail" class="text-sm mb-6" style="color:#94a3b8;"></p>
+          <button onclick="startQuiz()" class="px-8 py-3 rounded-xl font-bold" style="background:#06b6d4;color:#0f172a;">Reintentar</button>
+        </div>
+      </section>
+
+      <!-- VISUAL SIMULATOR -->
+      <section id="section-visual" class="anim-fade max-w-3xl mx-auto hidden">
+        <h2 class="text-xl font-bold mb-1" style="color:#f1f5f9;">Simulador Interactivo</h2>
+        <p class="text-sm mb-5" style="color:#94a3b8;">Observa cómo fluyen las peticiones entre cliente y servidor</p>
+        <!-- Scenario selector -->
+        <div class="flex gap-2 mb-6 flex-wrap">
+          <button onclick="setScenario('http')" id="sc-http" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#06b6d4;color:#0f172a;">HTTP Request</button> 
+          <button onclick="setScenario('dns')" id="sc-dns" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">DNS Lookup</button> 
+          <button onclick="setScenario('lb')" id="sc-lb" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">Load Balancer</button> 
+          <button onclick="setScenario('db')" id="sc-db" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">Base de Datos</button>
+        </div>
+        <!-- Simulation canvas -->
+        <div id="sim-container" class="rounded-2xl p-6 relative overflow-hidden" style="background:#1e293b;border:1px solid #334155;min-height:320px;">
+          <!-- Filled by JS -->
+        </div>
+        <!-- Step explanation -->
+        <div id="sim-steps" class="mt-4 rounded-xl p-4" style="background:#1e293b;border:1px solid #334155;">
+          <h3 class="font-bold text-sm mb-2" style="color:#06b6d4;">Pasos del proceso:</h3>
+          <ol id="sim-step-list" class="text-sm space-y-1" style="color:#94a3b8;"></ol>
+        </div>
+        <button onclick="replayScenario()" class="mt-3 px-6 py-2 rounded-lg font-semibold text-sm" style="background:#334155;color:#06b6d4;"> 
+          <i data-lucide="refresh-cw" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Repetir animación 
+        </button>
+      </section>
+
+      <!-- GLOSSARY -->
+      <section id="section-glossary" class="anim-fade max-w-2xl mx-auto hidden">
+        <h2 class="text-xl font-bold mb-1" style="color:#f1f5f9;">Glosario de Servidores</h2>
+        <p class="text-sm mb-5" style="color:#94a3b8;">Términos clave que debes conocer</p>
+        <input id="glossary-search" type="text" placeholder="Buscar término..." oninput="filterGlossary()" class="w-full px-4 py-3 rounded-xl mb-4 text-sm" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;outline:none;">
+        <div id="glossary-list" class="space-y-2"></div>
+      </section>
+
+    </main>
   </div>
-  <script>
+
+<script>
 // ========== DATA ==========
 const flashcards = [
   { id:"fc1", q:"¿Qué es un servidor?", a:"Un servidor es una computadora o programa que provee servicios, datos o recursos a otros dispositivos (clientes) a través de una red." },
@@ -186,87 +238,18 @@ const glossaryTerms = [
 // ========== STATE ==========
 let currentCard = 0;
 let cardFlipped = false;
-let userProgress = []; // from Data SDK
+let userProgress = []; 
 let quizState = { active:false, questions:[], current:0, score:0, answered:false };
 let currentScenario = 'http';
 
-// ========== ELEMENT SDK ==========
-const defaultConfig = {
-  app_title: "Server Learning Hub",
-  welcome_text: "Aprende cómo funcionan los servidores",
-  background_color: "#0f172a",
-  surface_color: "#1e293b",
-  text_color: "#e2e8f0",
-  primary_action: "#06b6d4",
-  secondary_action: "#2dd4bf",
-  font_family: "DM Sans",
-  font_size: 16
-};
-
-function applyConfig(config) {
-  const bg = config.background_color || defaultConfig.background_color;
-  const sf = config.surface_color || defaultConfig.surface_color;
-  const tx = config.text_color || defaultConfig.text_color;
-  const pa = config.primary_action || defaultConfig.primary_action;
-  const sa = config.secondary_action || defaultConfig.secondary_action;
-  const ff = config.font_family || defaultConfig.font_family;
-  const fs = config.font_size || defaultConfig.font_size;
-
-  document.body.style.background = bg;
-  document.body.style.color = tx;
-  document.body.style.fontFamily = `${ff}, DM Sans, sans-serif`;
-  document.body.style.fontSize = fs + 'px';
-
-  const title = document.getElementById('app-title');
-  const welcome = document.getElementById('welcome-text');
-  if (title) title.textContent = config.app_title || defaultConfig.app_title;
-  if (welcome) welcome.textContent = config.welcome_text || defaultConfig.welcome_text;
-  if (title) title.style.color = pa;
-
-  document.querySelector('header').style.background = sf;
-  document.querySelector('nav').style.background = sf;
-
-  // Update surfaces
-  document.querySelectorAll('[data-surface]').forEach(el => {
-    el.style.background = sf;
-    el.style.borderColor = bg;
-  });
-}
-
-window.elementSdk.init({
-  defaultConfig,
-  onConfigChange: async (config) => applyConfig(config),
-  mapToCapabilities: (config) => ({
-    recolorables: [
-      { get:()=>config.background_color||defaultConfig.background_color, set:(v)=>{config.background_color=v;window.elementSdk.setConfig({background_color:v})} },
-      { get:()=>config.surface_color||defaultConfig.surface_color, set:(v)=>{config.surface_color=v;window.elementSdk.setConfig({surface_color:v})} },
-      { get:()=>config.text_color||defaultConfig.text_color, set:(v)=>{config.text_color=v;window.elementSdk.setConfig({text_color:v})} },
-      { get:()=>config.primary_action||defaultConfig.primary_action, set:(v)=>{config.primary_action=v;window.elementSdk.setConfig({primary_action:v})} },
-      { get:()=>config.secondary_action||defaultConfig.secondary_action, set:(v)=>{config.secondary_action=v;window.elementSdk.setConfig({secondary_action:v})} },
-    ],
-    borderables: [],
-    fontEditable: { get:()=>config.font_family||defaultConfig.font_family, set:(v)=>{config.font_family=v;window.elementSdk.setConfig({font_family:v})} },
-    fontSizeable: { get:()=>config.font_size||defaultConfig.font_size, set:(v)=>{config.font_size=v;window.elementSdk.setConfig({font_size:v})} },
-  }),
-  mapToEditPanelValues: (config) => new Map([
-    ["app_title", config.app_title || defaultConfig.app_title],
-    ["welcome_text", config.welcome_text || defaultConfig.welcome_text],
-  ])
-});
-
-// ========== DATA SDK ==========
-const dataHandler = {
-  onDataChanged(data) {
-    userProgress = data;
-    updateStats();
+// ========== LOCAL STORAGE (Reemplaza Data SDK) ==========
+function initData() {
+  const savedData = localStorage.getItem('slh_progress');
+  if (savedData) {
+    userProgress = JSON.parse(savedData);
   }
-};
-
-async function initData() {
-  const r = await window.dataSdk.init(dataHandler);
-  if (!r.isOk) console.error("Data SDK init failed");
+  updateStats();
 }
-initData();
 
 function updateStats() {
   const mastered = userProgress.filter(p => p.mastered).length;
@@ -275,16 +258,23 @@ function updateStats() {
   document.getElementById('stat-seen').textContent = seen;
 }
 
-async function markCard(mastered) {
+function markCard(mastered) {
   const card = flashcards[currentCard];
   const existing = userProgress.find(p => p.card_id === card.id);
+  
   if (existing) {
-    const updated = { ...existing, mastered, times_seen: (existing.times_seen||0)+1, last_seen: new Date().toISOString() };
-    await window.dataSdk.update(updated);
+    existing.mastered = mastered;
+    existing.times_seen = (existing.times_seen || 0) + 1;
+    existing.last_seen = new Date().toISOString();
   } else {
-    if (userProgress.length >= 999) return;
-    await window.dataSdk.create({ card_id: card.id, mastered, times_seen: 1, last_seen: new Date().toISOString() });
+    if (userProgress.length < 999) {
+      userProgress.push({ card_id: card.id, mastered, times_seen: 1, last_seen: new Date().toISOString() });
+    }
   }
+  
+  // Guardar en el navegador
+  localStorage.setItem('slh_progress', JSON.stringify(userProgress));
+  updateStats();
   nextCard();
 }
 
@@ -575,10 +565,11 @@ function switchTab(tab) {
 }
 
 // ========== INIT ==========
+initData();
 renderCard();
 renderGlossary(glossaryTerms);
 renderScenario();
 lucide.createIcons();
 </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ed03095f0b33332',t:'MTc3NjMxMTA0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
