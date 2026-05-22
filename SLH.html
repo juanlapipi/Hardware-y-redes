@@ -1,575 +1,805 @@
-<!doctype html>
-<html lang="es" class="h-full">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Server Learning Hub</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-  <style>
-    html, body { height: 100%; margin: 0; }
-    * { box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
-    .mono { font-family: 'Space Mono', monospace; }
-    .card-flip { perspective: 1000px; }
-    .card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
-    .card-inner.flipped { transform: rotateY(180deg); }
-    .card-front, .card-back { backface-visibility: hidden; position: absolute; inset: 0; }
-    .card-back { transform: rotateY(180deg); }
-    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    @keyframes packet-move { 0% { left: 0%; } 100% { left: calc(100% - 12px); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .anim-fade { animation: fadeIn 0.4s ease-out; }
-    .pulse-dot { animation: pulse-dot 1.5s infinite; }
-    .packet { animation: packet-move 2s linear infinite; }
-    .tab-active { border-bottom: 3px solid; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-    .progress-ring { transition: stroke-dashoffset 0.5s ease; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS PRIME: Protocolo de Restauración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050508;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff003c;
+            --neon-green: #00ff66;
+            --text-main: #e0e0e0;
+            --grid-color: rgba(0, 243, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'VT323', monospace;
+            overflow: hidden; /* Prevent scrolling, keep it like a game screen */
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* CRT Effects */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+        
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 49;
+            position: absolute;
+            pointer-events: none;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,243,255,0.1) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.3;
+            animation: scanline 6s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100vh); }
+            100% { transform: translateY(100vh); }
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            max-height: 800px;
+            position: relative;
+            background-color: #0a0a0f;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Grid Background */
+        .cyber-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
+            perspective: 500px;
+        }
+
+        h1, h2, h3, .pixel-text {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .text-glow-blue { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
+        .text-glow-pink { text-shadow: 0 0 5px var(--neon-pink), 0 0 10px var(--neon-pink); }
+        .text-glow-green { text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green); }
+
+        .btn-retro {
+            background-color: transparent;
+            color: var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-retro:hover {
+            background-color: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .btn-retro.disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+        .btn-retro.disabled:hover {
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .map-node {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #555;
+            background-color: #111;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+            transform: translate(-50%, -50%);
+        }
+
+        .map-node.cleared {
+            border-color: var(--neon-green);
+            background-color: rgba(0, 255, 102, 0.2);
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .map-node.available {
+            border-color: var(--neon-blue);
+            background-color: rgba(0, 243, 255, 0.2);
+            animation: pulse-node 2s infinite;
+        }
+
+        .map-node.locked {
+            border-color: var(--neon-pink);
+            background-color: rgba(255, 0, 60, 0.1);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        @keyframes pulse-node {
+            0% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 243, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0); }
+        }
+
+        .map-line {
+            position: absolute;
+            background-color: #555;
+            transform-origin: 0 50%;
+            z-index: 5;
+            height: 4px;
+        }
+        
+        .map-line.active { background-color: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
+        .map-line.cleared { background-color: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+
+        /* Dialog Box */
+        .dialog-box {
+            background: rgba(5, 5, 10, 0.9);
+            border: 2px solid var(--neon-blue);
+            border-radius: 8px;
+            padding: 20px;
+            position: absolute;
+            bottom: 20px;
+            left: 20%;
+            right: 20%;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+
+        /* Animations */
+        @keyframes flash-damage {
+            0% { background-color: rgba(255,0,0,0); }
+            50% { background-color: rgba(255,0,60,0.5); }
+            100% { background-color: rgba(255,0,0,0); }
+        }
+        .damage-flash { animation: flash-damage 0.3s ease-out; }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-effect { animation: glitch 0.2s infinite; }
+
+        /* Health Bar */
+        .health-bar-bg { width: 100%; height: 20px; background: #222; border: 2px solid #555; }
+        .health-bar-fill { height: 100%; background: var(--neon-green); transition: width 0.3s; }
+        .health-bar-fill.enemy { background: var(--neon-pink); }
+
+        .hide { display: none !important; }
+    </style>
 </head>
-<body class="h-full overflow-auto" style="background: #0f172a; color: #e2e8f0;">
-  <div id="app" class="w-full h-full flex flex-col">
-    <!-- Header -->
-    <header class="w-full px-6 py-4 flex items-center justify-between" style="background: #1e293b; border-bottom: 1px solid #334155;">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #06b6d4;">
-          <i data-lucide="server" style="width:22px;height:22px;color:#0f172a;"></i>
-        </div>
-        <div>
-          <h1 id="app-title" class="text-lg font-bold mono" style="color:#06b6d4;">Server Learning Hub</h1>
-          <p id="welcome-text" class="text-xs" style="color:#94a3b8;">Aprende cómo funcionan los servidores</p>
-        </div>
-      </div>
-      <div id="stats-bar" class="flex items-center gap-4 text-xs mono" style="color:#94a3b8;">
-        <span>🃏 <span id="stat-mastered">0</span> dominadas</span> 
-        <span>📊 <span id="stat-seen">0</span> vistas</span>
-      </div>
-    </header>
+<body class="bg-black crt">
+    
+    <div class="scanline"></div>
 
-    <!-- Nav Tabs -->
-    <nav class="w-full flex px-6 gap-1" style="background:#1e293b;">
-      <button onclick="switchTab('flashcards')" id="tab-flashcards" class="px-4 py-3 text-sm font-semibold tab-active" style="color:#06b6d4; border-color:#06b6d4;"> 
-        <i data-lucide="layers" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Flashcards 
-      </button> 
-      <button onclick="switchTab('quiz')" id="tab-quiz" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> 
-        <i data-lucide="help-circle" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Test 
-      </button> 
-      <button onclick="switchTab('visual')" id="tab-visual" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> 
-        <i data-lucide="activity" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Simulador 
-      </button> 
-      <button onclick="switchTab('glossary')" id="tab-glossary" class="px-4 py-3 text-sm font-semibold" style="color:#94a3b8;"> 
-        <i data-lucide="book-open" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Glosario 
-      </button>
-    </nav>
+    <div id="game-container" class="relative">
+        <div class="cyber-grid"></div>
 
-    <!-- Content -->
-    <main class="flex-1 w-full overflow-auto p-6">
-      
-      <!-- FLASHCARDS -->
-      <section id="section-flashcards" class="anim-fade max-w-2xl mx-auto">
-        <div class="flex items-center justify-between mb-4">
-          <p class="text-sm" style="color:#94a3b8;">Tarjeta <span id="fc-current">1</span> de <span id="fc-total">0</span></p>
-          <div class="flex gap-2">
-            <button onclick="prevCard()" class="px-3 py-1 rounded text-sm" style="background:#334155;color:#e2e8f0;">← Anterior</button> 
-            <button onclick="nextCard()" class="px-3 py-1 rounded text-sm" style="background:#06b6d4;color:#0f172a;font-weight:600;">Siguiente →</button>
-          </div>
-        </div>
-        <div class="card-flip w-full" style="height:340px;cursor:pointer;" onclick="flipCard()">
-          <div id="card-inner" class="card-inner w-full h-full relative">
-            <div class="card-front rounded-2xl p-8 flex flex-col items-center justify-center text-center" style="background: linear-gradient(135deg, #1e293b, #0f2a3b); border: 1px solid #06b6d4;">
-              <div class="mb-4 w-14 h-14 rounded-full flex items-center justify-center" style="background:rgba(6,182,212,0.15);">
-                <i data-lucide="help-circle" style="width:28px;height:28px;color:#06b6d4;"></i>
-              </div>
-              <p id="fc-question" class="text-xl font-bold" style="color:#f1f5f9;"></p>
-              <p class="text-xs mt-4 mono" style="color:#06b6d4;">Toca para ver la respuesta</p>
+        <!-- HUD (Heads Up Display) -->
+        <div id="hud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start z-40 hide bg-black/60 border-b border-[rgba(0,243,255,0.3)] backdrop-blur-sm">
+            <div class="flex gap-6">
+                <div>
+                    <div class="pixel-text text-xs text-blue-400 mb-1">NIVEL LÓGICO</div>
+                    <div class="text-3xl text-glow-blue" id="hud-level">01</div>
+                </div>
+                <div class="w-48">
+                    <div class="pixel-text text-xs text-green-400 mb-1">INTEGRIDAD (HP)</div>
+                    <div class="health-bar-bg"><div id="hud-hp" class="health-bar-fill" style="width: 100%;"></div></div>
+                </div>
+                <div class="w-48">
+                    <div class="pixel-text text-xs text-purple-400 mb-1">DATOS (XP)</div>
+                    <div class="health-bar-bg"><div id="hud-xp" class="health-bar-fill" style="background: #a855f7; width: 0%;"></div></div>
+                </div>
             </div>
-            <div class="card-back rounded-2xl p-8 flex flex-col items-center justify-center text-center" style="background: linear-gradient(135deg, #06292e, #1e293b); border: 1px solid #2dd4bf;">
-              <div class="mb-4 w-14 h-14 rounded-full flex items-center justify-center" style="background:rgba(45,212,191,0.15);">
-                <i data-lucide="check-circle" style="width:28px;height:28px;color:#2dd4bf;"></i>
-              </div>
-              <p id="fc-answer" class="text-lg" style="color:#f1f5f9;"></p>
+            <div class="flex gap-4">
+                <button onclick="Game.switchView('map')" class="btn-retro !px-3 !py-2 text-[10px]">MAPA</button>
+                <button onclick="Game.switchView('skills')" class="btn-retro !px-3 !py-2 text-[10px]">HABILIDADES</button>
             </div>
-          </div>
         </div>
-        <div class="flex justify-center gap-3 mt-5">
-          <button onclick="markCard(false)" class="px-5 py-2 rounded-lg text-sm font-semibold" style="background:#334155;color:#f87171;">✗ Repetir</button> 
-          <button onclick="markCard(true)" class="px-5 py-2 rounded-lg text-sm font-semibold" style="background:#334155;color:#2dd4bf;">✓ Dominada</button>
+
+        <!-- VIEW 1: INTRO / MAIN MENU -->
+        <div id="view-intro" class="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/80 backdrop-blur-md">
+            <h1 class="pixel-text text-5xl md:text-6xl text-glow-blue text-center leading-tight mb-4">
+                NEXUS PRIME<br>
+                <span class="text-2xl text-glow-pink">HARDWARE HUNTER</span>
+            </h1>
+            <p class="text-xl text-gray-400 max-w-2xl text-center mb-12">
+                Sistema de Archivos Corrompido. El conocimiento de Hardware y Redes se ha fragmentado. Eres el programa explorador diseñado para restaurar el Núcleo. 
+            </p>
+            <button onclick="Game.start()" class="btn-retro text-xl px-8 py-4 animate-pulse">INICIAR SECUENCIA</button>
         </div>
-      </section>
 
-      <!-- QUIZ -->
-      <section id="section-quiz" class="anim-fade max-w-2xl mx-auto hidden">
-        <div id="quiz-start" class="text-center py-12">
-          <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style="background:rgba(6,182,212,0.15);">
-            <i data-lucide="brain" style="width:40px;height:40px;color:#06b6d4;"></i>
-          </div>
-          <h2 class="text-2xl font-bold mb-2" style="color:#f1f5f9;">Test de Servidores</h2>
-          <p class="mb-6 text-sm" style="color:#94a3b8;">10 preguntas aleatorias para evaluar tu conocimiento</p>
-          <button onclick="startQuiz()" class="px-8 py-3 rounded-xl font-bold text-base" style="background:#06b6d4;color:#0f172a;">Comenzar Test</button>
+        <!-- VIEW 2: MAP (METROIDVANIA) -->
+        <div id="view-map" class="absolute inset-0 z-20 hide pt-24 pb-8 px-8 overflow-hidden">
+            <h2 class="pixel-text text-xl text-glow-blue mb-4 text-center">NEXUS GLOBAL: SECTOR HARDWARE Y REDES</h2>
+            <div class="relative w-full h-[500px] border border-blue-900 bg-[#050510]/80 rounded-lg overflow-hidden" id="map-container">
+                <!-- Map nodes will be injected here via JS -->
+            </div>
+            <div class="mt-4 flex justify-center gap-6 text-sm">
+                <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[rgba(0,255,102,0.5)] border border-green-500"></div> Restaurado</span>
+                <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[rgba(0,243,255,0.5)] border border-blue-500"></div> Accesible</span>
+                <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[rgba(255,0,60,0.3)] border border-red-500"></div> Corrompido/Bloqueado</span>
+            </div>
         </div>
-        <div id="quiz-active" class="hidden">
-          <div class="flex items-center justify-between mb-4">
-            <p class="text-sm mono" style="color:#94a3b8;">Pregunta <span id="q-num">1</span>/10</p>
-            <p class="text-sm mono" style="color:#06b6d4;">Puntos: <span id="q-score">0</span></p>
-          </div>
-          <div class="w-full rounded-full h-2 mb-6" style="background:#334155;">
-            <div id="q-progress" class="h-2 rounded-full transition-all" style="background:#06b6d4;width:10%;"></div>
-          </div>
-          <div class="rounded-2xl p-6 mb-4" style="background:#1e293b;border:1px solid #334155;">
-            <p id="q-text" class="text-lg font-semibold mb-1" style="color:#f1f5f9;"></p>
-          </div>
-          <div id="q-options" class="grid gap-3"></div>
-          <div id="q-feedback" class="hidden mt-4 rounded-xl p-4 text-sm"></div>
-          <button id="q-next" onclick="nextQuestion()" class="hidden mt-4 w-full py-3 rounded-xl font-bold" style="background:#06b6d4;color:#0f172a;">Siguiente Pregunta</button>
+
+        <!-- VIEW 3: COMBAT/LEARNING TERMINAL -->
+        <div id="view-combat" class="absolute inset-0 z-20 hide pt-24 flex flex-col items-center">
+            
+            <div class="w-full max-w-4xl px-8 flex justify-between items-end mb-4">
+                <div class="w-1/3">
+                    <!-- Enemy Stats -->
+                    <div class="pixel-text text-xs text-red-400 mb-1" id="enemy-name">ANOMALÍA DETECTADA</div>
+                    <div class="health-bar-bg"><div id="enemy-hp" class="health-bar-fill enemy" style="width: 100%;"></div></div>
+                </div>
+                <div class="text-right">
+                    <div class="pixel-text text-glow-pink text-2xl" id="combat-sector-name">SECTOR CPU</div>
+                </div>
+            </div>
+
+            <!-- Terminal Window -->
+            <div class="w-full max-w-4xl h-[450px] border-2 border-blue-500 bg-black/90 p-6 flex flex-col shadow-[0_0_20px_rgba(0,243,255,0.2)]">
+                
+                <!-- Lore/Question Area -->
+                <div class="flex-1 overflow-y-auto mb-4 border-b border-blue-900 pb-4 text-xl leading-relaxed text-blue-100" id="terminal-output">
+                    > Iniciando análisis del nodo...<br>
+                </div>
+
+                <!-- Interactive Area (Options) -->
+                <div id="combat-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 h-48">
+                    <!-- Buttons injected via JS -->
+                </div>
+                
+            </div>
         </div>
-        <div id="quiz-result" class="hidden text-center py-10">
-          <div class="w-24 h-24 mx-auto mb-4 relative">
-            <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
-              <circle cx="50" cy="50" r="42" fill="none" stroke="#334155" stroke-width="8" /> 
-              <circle id="result-ring" cx="50" cy="50" r="42" fill="none" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" class="progress-ring" />
-            </svg>
-            <span id="result-pct" class="absolute inset-0 flex items-center justify-center text-2xl font-bold mono" style="color:#06b6d4;"></span>
-          </div>
-          <h2 id="result-msg" class="text-xl font-bold mb-2" style="color:#f1f5f9;"></h2>
-          <p id="result-detail" class="text-sm mb-6" style="color:#94a3b8;"></p>
-          <button onclick="startQuiz()" class="px-8 py-3 rounded-xl font-bold" style="background:#06b6d4;color:#0f172a;">Reintentar</button>
+
+        <!-- VIEW 4: SKILL TREE -->
+        <div id="view-skills" class="absolute inset-0 z-20 hide pt-24 px-8">
+            <h2 class="pixel-text text-2xl text-glow-blue mb-8 text-center">ÁRBOL DE HABILIDADES COGNITIVAS</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto" id="skills-container">
+                <!-- Skills injected via JS -->
+            </div>
         </div>
-      </section>
 
-      <!-- VISUAL SIMULATOR -->
-      <section id="section-visual" class="anim-fade max-w-3xl mx-auto hidden">
-        <h2 class="text-xl font-bold mb-1" style="color:#f1f5f9;">Simulador Interactivo</h2>
-        <p class="text-sm mb-5" style="color:#94a3b8;">Observa cómo fluyen las peticiones entre cliente y servidor</p>
-        <!-- Scenario selector -->
-        <div class="flex gap-2 mb-6 flex-wrap">
-          <button onclick="setScenario('http')" id="sc-http" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#06b6d4;color:#0f172a;">HTTP Request</button> 
-          <button onclick="setScenario('dns')" id="sc-dns" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">DNS Lookup</button> 
-          <button onclick="setScenario('lb')" id="sc-lb" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">Load Balancer</button> 
-          <button onclick="setScenario('db')" id="sc-db" class="px-4 py-2 rounded-lg text-xs font-semibold" style="background:#334155;color:#94a3b8;">Base de Datos</button>
+        <!-- SYSTEM DIALOG (Custom Alert) -->
+        <div id="system-dialog" class="dialog-box hide flex flex-col items-center text-center">
+            <h3 class="pixel-text text-glow-pink text-xl mb-4" id="dialog-title">ALERTA DEL SISTEMA</h3>
+            <p class="text-lg mb-6 text-gray-300" id="dialog-message">Mensaje...</p>
+            <button onclick="Game.closeDialog()" class="btn-retro">ENTENDIDO</button>
         </div>
-        <!-- Simulation canvas -->
-        <div id="sim-container" class="rounded-2xl p-6 relative overflow-hidden" style="background:#1e293b;border:1px solid #334155;min-height:320px;">
-          <!-- Filled by JS -->
-        </div>
-        <!-- Step explanation -->
-        <div id="sim-steps" class="mt-4 rounded-xl p-4" style="background:#1e293b;border:1px solid #334155;">
-          <h3 class="font-bold text-sm mb-2" style="color:#06b6d4;">Pasos del proceso:</h3>
-          <ol id="sim-step-list" class="text-sm space-y-1" style="color:#94a3b8;"></ol>
-        </div>
-        <button onclick="replayScenario()" class="mt-3 px-6 py-2 rounded-lg font-semibold text-sm" style="background:#334155;color:#06b6d4;"> 
-          <i data-lucide="refresh-cw" style="width:14px;height:14px;display:inline;vertical-align:middle;"></i> Repetir animación 
-        </button>
-      </section>
 
-      <!-- GLOSSARY -->
-      <section id="section-glossary" class="anim-fade max-w-2xl mx-auto hidden">
-        <h2 class="text-xl font-bold mb-1" style="color:#f1f5f9;">Glosario de Servidores</h2>
-        <p class="text-sm mb-5" style="color:#94a3b8;">Términos clave que debes conocer</p>
-        <input id="glossary-search" type="text" placeholder="Buscar término..." oninput="filterGlossary()" class="w-full px-4 py-3 rounded-xl mb-4 text-sm" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;outline:none;">
-        <div id="glossary-list" class="space-y-2"></div>
-      </section>
+    </div>
 
-    </main>
-  </div>
+    <script>
+        // --- GAME DATA ---
+        
+        const SKILLS_DB = {
+            "overclock": { name: "OVERCLOCK", desc: "Aumenta tu HP máximo. Desbloquea nodos de procesamiento avanzado.", icon: "⚡" },
+            "packet_sniffer": { name: "PACKET SNIFFER", desc: "Permite ver el protocolo de red. Desbloquea acceso a los túneles TCP/IP.", icon: "📡" },
+            "firewall_bypass": { name: "FIREWALL BYPASS", desc: "Rompe las barreras de seguridad. Acceso a la Ciudadela de Enrutamiento.", icon: "🛡️" }
+        };
 
-<script>
-// ========== DATA ==========
-const flashcards = [
-  { id:"fc1", q:"¿Qué es un servidor?", a:"Un servidor es una computadora o programa que provee servicios, datos o recursos a otros dispositivos (clientes) a través de una red." },
-  { id:"fc2", q:"¿Qué significa HTTP?", a:"HyperText Transfer Protocol. Es el protocolo principal para transferir páginas web entre servidores y navegadores." },
-  { id:"fc3", q:"¿Qué es una dirección IP?", a:"Es un identificador numérico único (ej: 192.168.1.1) asignado a cada dispositivo conectado a una red para poder comunicarse." },
-  { id:"fc4", q:"¿Qué hace un DNS?", a:"El Domain Name System traduce nombres de dominio legibles (google.com) a direcciones IP numéricas que las máquinas entienden." },
-  { id:"fc5", q:"¿Qué es un puerto de red?", a:"Un número (0-65535) que identifica un servicio específico en un servidor. Ej: puerto 80 para HTTP, 443 para HTTPS." },
-  { id:"fc6", q:"¿Qué es un Load Balancer?", a:"Un balanceador de carga distribuye el tráfico de red entre varios servidores para evitar sobrecarga y mejorar disponibilidad." },
-  { id:"fc7", q:"¿Qué es HTTPS?", a:"HTTP Secure. Versión encriptada de HTTP que usa TLS/SSL para proteger los datos transmitidos entre cliente y servidor." },
-  { id:"fc8", q:"¿Qué es una API REST?", a:"Una interfaz que permite a aplicaciones comunicarse usando métodos HTTP (GET, POST, PUT, DELETE) sobre recursos identificados por URLs." },
-  { id:"fc9", q:"¿Qué es el modelo cliente-servidor?", a:"Arquitectura donde los clientes solicitan recursos y los servidores los proveen. Es la base de Internet." },
-  { id:"fc10", q:"¿Qué es la latencia?", a:"El tiempo que tarda un paquete de datos en viajar desde el origen al destino. Se mide en milisegundos (ms)." },
-  { id:"fc11", q:"¿Qué es un proxy inverso?", a:"Un servidor intermediario que recibe peticiones de clientes y las redirige a servidores internos, añadiendo seguridad y cache." },
-  { id:"fc12", q:"¿Qué es la escalabilidad?", a:"La capacidad de un sistema para manejar más carga. Puede ser vertical (más potencia) u horizontal (más servidores)." },
-  { id:"fc13", q:"¿Qué es un firewall?", a:"Software o hardware que filtra el tráfico de red, permitiendo o bloqueando conexiones según reglas de seguridad definidas." },
-  { id:"fc14", q:"¿Qué son los códigos de estado HTTP?", a:"Números de 3 dígitos que indican el resultado: 200=OK, 404=No encontrado, 500=Error del servidor, 301=Redirección." },
-  { id:"fc15", q:"¿Qué es un contenedor (Docker)?", a:"Un paquete ligero y aislado que incluye una aplicación y todas sus dependencias, permitiendo ejecución consistente en cualquier servidor." },
-];
+        const MAP_NODES = [
+            // HARDWARE TIER 1
+            { id: "node_ram", x: 20, y: 50, name: "Planicie de Memoria Volátil (RAM)", req: [], skillReward: null, type: "quiz" },
+            { id: "node_storage", x: 35, y: 70, name: "Bóvedas de Almacenamiento (HDD/SSD)", req: ["node_ram"], skillReward: null, type: "quiz" },
+            { id: "node_cpu", x: 35, y: 30, name: "Torre de Control Central (CPU Boss)", req: ["node_ram", "node_storage"], skillReward: "overclock", type: "boss" },
+            
+            // NETWORKING TIER 1 (Requires Overclock to process)
+            { id: "node_nic", x: 55, y: 50, name: "Puerto de Interfaz (NIC)", req: ["node_cpu"], reqSkill: "overclock", skillReward: null, type: "quiz" },
+            { id: "node_osi", x: 70, y: 30, name: "Las 7 Capas del Abismo (Modelo OSI)", req: ["node_nic"], skillReward: "packet_sniffer", type: "boss" },
+            
+            // NETWORKING TIER 2 (Requires Packet Sniffer)
+            { id: "node_ip", x: 70, y: 70, name: "Cañón de Direccionamiento (IPv4/IPv6)", req: ["node_nic"], reqSkill: "packet_sniffer", skillReward: null, type: "quiz" },
+            { id: "node_router", x: 90, y: 50, name: "El Nexo del Enrutador (Boss Final)", req: ["node_osi", "node_ip"], skillReward: "firewall_bypass", type: "boss" }
+        ];
 
-const quizQuestions = [
-  { q:"¿Qué protocolo usa el puerto 443 por defecto?", opts:["HTTP","FTP","HTTPS","SSH"], correct:2 },
-  { q:"¿Cuál es la función principal de un DNS?", opts:["Encriptar datos","Traducir dominios a IPs","Balancear carga","Almacenar archivos"], correct:1 },
-  { q:"¿Qué código HTTP indica 'No encontrado'?", opts:["200","301","404","500"], correct:2 },
-  { q:"¿Qué tipo de escalabilidad añade más servidores?", opts:["Vertical","Diagonal","Horizontal","Circular"], correct:2 },
-  { q:"¿Qué método HTTP se usa para obtener datos?", opts:["POST","GET","DELETE","PUT"], correct:1 },
-  { q:"¿Qué componente distribuye tráfico entre servidores?", opts:["Firewall","DNS","Load Balancer","Proxy"], correct:2 },
-  { q:"¿Qué significa la 'S' en HTTPS?", opts:["Server","Secure","Simple","Standard"], correct:1 },
-  { q:"¿Qué tecnología permite empaquetar apps con sus dependencias?", opts:["DNS","Contenedores","Firewalls","SMTP"], correct:1 },
-  { q:"¿Qué código HTTP indica éxito?", opts:["100","200","300","400"], correct:1 },
-  { q:"¿Cuál NO es un método HTTP válido?", opts:["GET","POST","SEND","DELETE"], correct:2 },
-  { q:"¿Qué es la latencia?", opts:["Velocidad del procesador","Tiempo de viaje de datos","Tamaño de la base de datos","Memoria RAM disponible"], correct:1 },
-  { q:"¿Qué hace un firewall?", opts:["Acelera la red","Filtra tráfico de red","Almacena datos","Traduce dominios"], correct:1 },
-  { q:"¿Qué puerto usa HTTP por defecto?", opts:["22","80","443","3306"], correct:1 },
-  { q:"En el modelo cliente-servidor, ¿quién solicita recursos?", opts:["El servidor","El router","El cliente","El DNS"], correct:2 },
-  { q:"¿Qué es un proxy inverso?", opts:["Un cliente especial","Un intermediario frente a servidores","Un tipo de base de datos","Un protocolo de red"], correct:1 },
-];
+        // Line connections for visual map
+        const MAP_EDGES = [
+            ["node_ram", "node_storage"],
+            ["node_ram", "node_cpu"],
+            ["node_storage", "node_cpu"],
+            ["node_cpu", "node_nic"],
+            ["node_nic", "node_osi"],
+            ["node_nic", "node_ip"],
+            ["node_osi", "node_router"],
+            ["node_ip", "node_router"]
+        ];
 
-const glossaryTerms = [
-  { term:"Servidor", def:"Computadora que provee servicios a clientes en una red." },
-  { term:"Cliente", def:"Dispositivo o programa que solicita recursos a un servidor." },
-  { term:"HTTP", def:"Protocolo de transferencia de hipertexto para la web." },
-  { term:"HTTPS", def:"Versión segura y encriptada de HTTP." },
-  { term:"DNS", def:"Sistema que traduce nombres de dominio a direcciones IP." },
-  { term:"IP", def:"Dirección numérica única de un dispositivo en la red." },
-  { term:"Puerto", def:"Número que identifica un servicio específico en un host." },
-  { term:"Load Balancer", def:"Distribuye tráfico entre múltiples servidores." },
-  { term:"API", def:"Interfaz para que aplicaciones se comuniquen entre sí." },
-  { term:"REST", def:"Estilo arquitectónico para APIs basado en HTTP." },
-  { term:"Firewall", def:"Filtra tráfico de red según reglas de seguridad." },
-  { term:"Proxy", def:"Intermediario entre cliente y servidor." },
-  { term:"Latencia", def:"Tiempo de viaje de un paquete de datos por la red." },
-  { term:"TLS/SSL", def:"Protocolos de encriptación para comunicaciones seguras." },
-  { term:"Docker", def:"Plataforma para ejecutar apps en contenedores aislados." },
-  { term:"Escalabilidad", def:"Capacidad de crecer para manejar más carga." },
-  { term:"Código de estado", def:"Número de 3 dígitos que indica resultado HTTP." },
-  { term:"Base de datos", def:"Sistema organizado para almacenar y consultar datos." },
-  { term:"Cache", def:"Almacenamiento temporal para acelerar futuras peticiones." },
-  { term:"CDN", def:"Red de servidores distribuidos para entregar contenido rápido." },
-];
+        const QUESTION_POOL = {
+            "node_ram": [
+                { q: "Encuentras módulos de datos que desaparecen al cortar la energía. ¿Qué tipo de memoria es?", opts: ["ROM", "RAM", "Disco Duro", "Memoria Caché"], a: 1 },
+                { q: "¿Cuál es la función principal de la memoria RAM en el sistema?", opts: ["Almacenar archivos permanentemente", "Procesar gráficos 3D", "Almacenar datos e instrucciones temporales para acceso rápido de la CPU", "Enfriar la placa base"], a: 2 },
+                { q: "La velocidad de esta memoria se mide frecuentemente en...", opts: ["Megabytes (MB)", "Megahertz (MHz) o Gigatransfers (MT/s)", "Revoluciones por minuto (RPM)", "Vatios (W)"], a: 1 }
+            ],
+            "node_storage": [
+                { q: "Este dispositivo utiliza memoria flash NAND para almacenar datos sin partes móviles. ¿Qué es?", opts: ["HDD", "SSD", "Unidad de cinta", "RAM"], a: 1 },
+                { q: "¿Qué tecnología de almacenamiento es tradicionalmente más rápida para leer/escribir?", opts: ["Disco Duro Mecánico (HDD)", "Unidad de Estado Sólido (SSD)", "CD-ROM", "Disquete"], a: 1 },
+                { q: "¿Qué significa el acrónimo HDD?", opts: ["Hard Disk Drive", "Heavy Data Device", "Hyper Disk Display", "Hardware Data Drive"], a: 0 }
+            ],
+            "node_cpu": [
+                { q: "[JEFE CPU] SOY EL CEREBRO. ¿Cuál es mi función principal?", opts: ["Renderizar video", "Almacenar fotos", "Ejecutar instrucciones y procesar datos", "Conectar a internet"], a: 2 },
+                { q: "[JEFE CPU] Mi velocidad de reloj determina mis ciclos. ¿En qué unidad se mide?", opts: ["Gigahercios (GHz)", "Gigabytes (GB)", "Milivoltios (mV)", "Megabits (Mbps)"], a: 0 },
+                { q: "[JEFE CPU] Para no sobrecalentarme, dependo de un componente. ¿Cuál?", opts: ["Fuente de poder", "Disipador de calor térmico y ventilador", "Tarjeta de red", "Cable SATA"], a: 1 },
+                { q: "[JEFE CPU] Contengo núcleos e hilos. ¿Qué permiten los múltiples núcleos?", opts: ["Mejorar la conexión WiFi", "Aumentar el espacio del disco", "Procesamiento paralelo de múltiples tareas", "Reducir el consumo de energía a 0"], a: 2 }
+            ],
+            "node_nic": [
+                { q: "¿Qué componente físico permite a un dispositivo conectarse a una red?", opts: ["CPU", "GPU", "NIC (Tarjeta de Interfaz de Red)", "SSD"], a: 2 },
+                { q: "La dirección física única grabada en la NIC desde fábrica se llama...", opts: ["Dirección IP", "Dirección MAC", "Máscara de subred", "Puerta de enlace"], a: 1 },
+                { q: "¿Qué tipo de cable se utiliza comúnmente para conectar la NIC a un switch Ethernet?", opts: ["Cable coaxial", "Cable HDMI", "Par trenzado (Ej. Cat6, con conector RJ-45)", "Cable USB"], a: 2 }
+            ],
+            "node_osi": [
+                { q: "[JEFE OSI] Soy un modelo teórico. ¿Cuántas capas tengo?", opts: ["4", "5", "7", "9"], a: 2 },
+                { q: "[JEFE OSI] Mi Capa 3 se encarga del enrutamiento. ¿Cómo se llama?", opts: ["Capa de Enlace de Datos", "Capa de Red", "Capa de Transporte", "Capa de Aplicación"], a: 1 },
+                { q: "[JEFE OSI] Mi Capa 1 define voltajes, cables y pines. Es la capa...", opts: ["Física", "Lógica", "Mágica", "De Presentación"], a: 0 },
+                { q: "[JEFE OSI] El protocolo TCP opera en mi Capa 4, garantizando entrega. ¿Cómo se llama esta capa?", opts: ["Sesión", "Transporte", "Red", "Enlace"], a: 1 }
+            ],
+            "node_ip": [
+                { q: "¿Cuál de estas es una dirección IPv4 válida?", opts: ["192.168.1.256", "10.0.0.1", "2001:0db8::ff00:42:8329", "192.168.1.-1"], a: 1 },
+                { q: "IPv6 se introdujo principalmente porque...", opts: ["Es más fácil de memorizar", "Se agotaron las direcciones IPv4 públicas", "Es un requisito para el WiFi", "Hace que la PC sea más rápida"], a: 1 },
+                { q: "¿Qué servicio traduce nombres amigables (como google.com) a direcciones IP?", opts: ["DHCP", "FTP", "DNS", "HTTP"], a: 2 }
+            ],
+            "node_router": [
+                { q: "[NEXO FINAL] Yo conecto diferentes redes entre sí y determino la mejor ruta. ¿Quién soy?", opts: ["Switch", "Hub", "Router", "Access Point"], a: 2 },
+                { q: "[NEXO FINAL] A diferencia de un switch de capa 2 que usa MACs, yo tomo decisiones basadas en...", opts: ["Direcciones IP", "Nombres de PC", "Puertos USB", "Fabricante de la tarjeta"], a: 0 },
+                { q: "[NEXO FINAL] Si tu PC no sabe cómo llegar a una red externa, envía el paquete a tu Router. Esto se conoce como...", opts: ["Broadcast", "Default Gateway (Puerta de enlace predeterminada)", "Ping", "Máscara de subred"], a: 1 },
+                { q: "[NEXO FINAL] Un cortafuegos (Firewall) dentro de mí bloquea tráfico no deseado usando reglas llamadas...", opts: ["ACL (Listas de Control de Acceso)", "DNS", "MAC Tables", "VLANs"], a: 0 },
+                { q: "[NEXO FINAL] Al restaurarme, has reparado el protocolo. ¿Qué comando usas para verificar conectividad conmigo?", opts: ["format c:", "ping", "ipconfig /release", "shutdown"], a: 1 }
+            ]
+        };
 
-// ========== STATE ==========
-let currentCard = 0;
-let cardFlipped = false;
-let userProgress = []; 
-let quizState = { active:false, questions:[], current:0, score:0, answered:false };
-let currentScenario = 'http';
+        const Game = (function() {
+            // STATE
+            let state = {
+                level: 1,
+                xp: 0,
+                hp: 100,
+                maxHp: 100,
+                unlockedSkills: [],
+                clearedNodes: [],
+                currentNodeId: null,
+                combatState: {
+                    questionsLeft: [],
+                    currentQuestion: null,
+                    enemyMaxHp: 100,
+                    enemyHp: 100,
+                    typewriterInterval: null
+                }
+            };
 
-// ========== LOCAL STORAGE (Reemplaza Data SDK) ==========
-function initData() {
-  const savedData = localStorage.getItem('slh_progress');
-  if (savedData) {
-    userProgress = JSON.parse(savedData);
-  }
-  updateStats();
-}
+            // DOM Elements
+            const els = {
+                hud: document.getElementById('hud'),
+                hudLevel: document.getElementById('hud-level'),
+                hudHp: document.getElementById('hud-hp'),
+                hudXp: document.getElementById('hud-xp'),
+                views: {
+                    intro: document.getElementById('view-intro'),
+                    map: document.getElementById('view-map'),
+                    combat: document.getElementById('view-combat'),
+                    skills: document.getElementById('view-skills')
+                },
+                mapContainer: document.getElementById('map-container'),
+                dialog: document.getElementById('system-dialog'),
+                dialogTitle: document.getElementById('dialog-title'),
+                dialogMsg: document.getElementById('dialog-message'),
+                terminalOutput: document.getElementById('terminal-output'),
+                combatOptions: document.getElementById('combat-options'),
+                enemyHp: document.getElementById('enemy-hp'),
+                enemyName: document.getElementById('enemy-name'),
+                sectorName: document.getElementById('combat-sector-name'),
+                skillsContainer: document.getElementById('skills-container')
+            };
 
-function updateStats() {
-  const mastered = userProgress.filter(p => p.mastered).length;
-  const seen = userProgress.length;
-  document.getElementById('stat-mastered').textContent = mastered;
-  document.getElementById('stat-seen').textContent = seen;
-}
+            function init() {
+                renderMap();
+                renderSkills();
+            }
 
-function markCard(mastered) {
-  const card = flashcards[currentCard];
-  const existing = userProgress.find(p => p.card_id === card.id);
-  
-  if (existing) {
-    existing.mastered = mastered;
-    existing.times_seen = (existing.times_seen || 0) + 1;
-    existing.last_seen = new Date().toISOString();
-  } else {
-    if (userProgress.length < 999) {
-      userProgress.push({ card_id: card.id, mastered, times_seen: 1, last_seen: new Date().toISOString() });
-    }
-  }
-  
-  // Guardar en el navegador
-  localStorage.setItem('slh_progress', JSON.stringify(userProgress));
-  updateStats();
-  nextCard();
-}
+            function start() {
+                switchView('map');
+                els.hud.classList.remove('hide');
+                playSound('start');
+                showDialog("SISTEMA INICIADO", "Bienvenido, Explorador. Selecciona un nodo brillante en el mapa para comenzar la depuración del sistema.");
+            }
 
-// ========== FLASHCARDS ==========
-function renderCard() {
-  const card = flashcards[currentCard];
-  document.getElementById('fc-question').textContent = card.q;
-  document.getElementById('fc-answer').textContent = card.a;
-  document.getElementById('fc-current').textContent = currentCard + 1;
-  document.getElementById('fc-total').textContent = flashcards.length;
-  if (cardFlipped) { document.getElementById('card-inner').classList.remove('flipped'); cardFlipped = false; }
-}
-function flipCard() {
-  document.getElementById('card-inner').classList.toggle('flipped');
-  cardFlipped = !cardFlipped;
-}
-function nextCard() { currentCard = (currentCard + 1) % flashcards.length; renderCard(); }
-function prevCard() { currentCard = (currentCard - 1 + flashcards.length) % flashcards.length; renderCard(); }
+            function switchView(viewName) {
+                Object.values(els.views).forEach(el => el.classList.add('hide'));
+                els.views[viewName].classList.remove('hide');
+                if(viewName === 'map') updateMapVisuals();
+                if(viewName === 'skills') renderSkills();
+            }
 
-// ========== QUIZ ==========
-function startQuiz() {
-  const shuffled = [...quizQuestions].sort(()=>Math.random()-0.5).slice(0,10);
-  quizState = { active:true, questions:shuffled, current:0, score:0, answered:false };
-  document.getElementById('quiz-start').classList.add('hidden');
-  document.getElementById('quiz-result').classList.add('hidden');
-  document.getElementById('quiz-active').classList.remove('hidden');
-  renderQuestion();
-}
+            function updateHUD() {
+                els.hudLevel.innerText = state.level.toString().padStart(2, '0');
+                els.hudHp.style.width = `${(state.hp / state.maxHp) * 100}%`;
+                
+                // XP required for next level formula: level * 100
+                const nextLevelXp = state.level * 100;
+                let currentLevelXp = state.xp;
+                
+                // Calculate remainder for progress bar
+                let base_xp_for_current_level = 0;
+                for(let i = 1; i < state.level; i++) base_xp_for_current_level += (i*100);
+                
+                let relativeXp = state.xp - base_xp_for_current_level;
+                let percent = (relativeXp / nextLevelXp) * 100;
+                if(percent > 100) percent = 100; // should level up before this happens
+                els.hudXp.style.width = `${percent}%`;
+            }
 
-function renderQuestion() {
-  const qs = quizState;
-  const q = qs.questions[qs.current];
-  document.getElementById('q-num').textContent = qs.current + 1;
-  document.getElementById('q-score').textContent = qs.score;
-  document.getElementById('q-progress').style.width = ((qs.current+1)*10)+'%';
-  document.getElementById('q-text').textContent = q.q;
-  document.getElementById('q-feedback').classList.add('hidden');
-  document.getElementById('q-next').classList.add('hidden');
-  qs.answered = false;
+            function addXp(amount) {
+                state.xp += amount;
+                let nextLevelXp = 0;
+                for(let i = 1; i <= state.level; i++) nextLevelXp += (i*100);
+                
+                if(state.xp >= nextLevelXp) {
+                    state.level++;
+                    state.maxHp += 20;
+                    state.hp = state.maxHp;
+                    showDialog("¡NIVEL AUMENTADO!", `Has alcanzado el Nivel Lógico ${state.level}. Integridad máxima incrementada.`);
+                }
+                updateHUD();
+            }
 
-  const optsEl = document.getElementById('q-options');
-  optsEl.innerHTML = '';
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all';
-    btn.style.cssText = 'background:#0f172a;border:1px solid #334155;color:#e2e8f0;';
-    btn.textContent = opt;
-    btn.onclick = () => answerQuestion(i);
-    optsEl.appendChild(btn);
-  });
-}
+            function takeDamage(amount) {
+                state.hp -= amount;
+                document.getElementById('game-container').classList.add('damage-flash');
+                setTimeout(() => document.getElementById('game-container').classList.remove('damage-flash'), 300);
+                playSound('error');
+                
+                if(state.hp <= 0) {
+                    state.hp = state.maxHp; // Reset
+                    showDialog("SISTEMA CRÍTICO", "Integridad al 0%. Desconexión forzada. Volviendo al mapa de red.");
+                    switchView('map');
+                }
+                updateHUD();
+            }
 
-function answerQuestion(idx) {
-  if (quizState.answered) return;
-  quizState.answered = true;
-  const q = quizState.questions[quizState.current];
-  const correct = idx === q.correct;
-  if (correct) quizState.score++;
+            function showDialog(title, message) {
+                els.dialogTitle.innerText = title;
+                els.dialogMsg.innerText = message;
+                els.dialog.classList.remove('hide');
+            }
+            
+            function closeDialog() {
+                els.dialog.classList.add('hide');
+            }
 
-  const btns = document.getElementById('q-options').children;
-  for (let i = 0; i < btns.length; i++) {
-    if (i === q.correct) { btns[i].style.background='#064e3b'; btns[i].style.borderColor='#2dd4bf'; btns[i].style.color='#2dd4bf'; }
-    else if (i === idx && !correct) { btns[i].style.background='#450a0a'; btns[i].style.borderColor='#f87171'; btns[i].style.color='#f87171'; }
-    else { btns[i].style.opacity='0.4'; }
-  }
+            function renderMap() {
+                els.mapContainer.innerHTML = '';
+                
+                // Draw edges first so they are behind nodes
+                MAP_EDGES.forEach(edge => {
+                    const n1 = MAP_NODES.find(n => n.id === edge[0]);
+                    const n2 = MAP_NODES.find(n => n.id === edge[1]);
+                    
+                    const dx = n2.x - n1.x;
+                    const dy = n2.y - n1.y;
+                    const length = Math.sqrt(dx*dx + dy*dy);
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-  const fb = document.getElementById('q-feedback');
-  fb.classList.remove('hidden');
-  fb.style.background = correct ? '#064e3b' : '#450a0a';
-  fb.style.color = correct ? '#2dd4bf' : '#f87171';
-  fb.textContent = correct ? '¡Correcto! 🎉' : `Incorrecto. La respuesta era: ${q.opts[q.correct]}`;
-  document.getElementById('q-next').classList.remove('hidden');
-}
+                    const line = document.createElement('div');
+                    line.className = 'map-line';
+                    line.id = `line-${n1.id}-${n2.id}`;
+                    line.style.width = `${length}%`; // Using percentage since container is responsive relative coordinates
+                    line.style.left = `${n1.x}%`;
+                    line.style.top = `${n1.y}%`;
+                    line.style.transform = `rotate(${angle}deg)`;
+                    
+                    els.mapContainer.appendChild(line);
+                });
 
-function nextQuestion() {
-  quizState.current++;
-  if (quizState.current >= quizState.questions.length) return showResults();
-  renderQuestion();
-}
+                // Draw Nodes
+                MAP_NODES.forEach(node => {
+                    const el = document.createElement('div');
+                    el.className = 'map-node locked';
+                    el.id = `ui-${node.id}`;
+                    el.style.left = `${node.x}%`;
+                    el.style.top = `${node.y}%`;
+                    
+                    // Icon based on type
+                    el.innerHTML = node.type === 'boss' ? '<span class="text-xl">💀</span>' : '<span class="text-xl">💾</span>';
+                    
+                    el.onclick = () => tryEnterNode(node);
+                    els.mapContainer.appendChild(el);
+                    
+                    // Label
+                    const label = document.createElement('div');
+                    label.className = 'absolute text-[10px] text-gray-400 font-sans text-center w-24 pointer-events-none text-glow-blue';
+                    label.style.left = `calc(${node.x}% - 3rem)`;
+                    label.style.top = `calc(${node.y}% + 25px)`;
+                    label.innerText = node.name;
+                    els.mapContainer.appendChild(label);
+                });
+                
+                updateMapVisuals();
+            }
 
-function showResults() {
-  document.getElementById('quiz-active').classList.add('hidden');
-  document.getElementById('quiz-result').classList.remove('hidden');
-  const pct = Math.round((quizState.score/quizState.questions.length)*100);
-  document.getElementById('result-pct').textContent = pct+'%';
-  const offset = 264 - (264 * pct / 100);
-  setTimeout(() => { document.getElementById('result-ring').style.strokeDashoffset = offset; }, 100);
-  document.getElementById('result-msg').textContent = pct >= 80 ? '¡Excelente!' : pct >= 50 ? '¡Buen trabajo!' : 'Sigue practicando';
-  document.getElementById('result-detail').textContent = `Respondiste ${quizState.score} de ${quizState.questions.length} correctamente`;
-}
+            function updateMapVisuals() {
+                MAP_NODES.forEach(node => {
+                    const el = document.getElementById(`ui-${node.id}`);
+                    el.classList.remove('locked', 'available', 'cleared');
+                    
+                    // Check if requirements met
+                    let reqMet = node.req.every(reqId => state.clearedNodes.includes(reqId));
+                    let skillMet = !node.reqSkill || state.unlockedSkills.includes(node.reqSkill);
 
-// ========== VISUAL SIMULATOR ==========
-const scenarios = {
-  http: {
-    title: "Petición HTTP",
-    steps: [
-      "1. El cliente (navegador) envía una petición HTTP al servidor",
-      "2. La petición viaja por Internet hasta la IP del servidor",
-      "3. El servidor procesa la petición y prepara la respuesta",
-      "4. El servidor envía la respuesta (HTML, JSON, etc.) al cliente",
-      "5. El navegador renderiza el contenido recibido"
-    ],
-    render: (container) => {
-      container.innerHTML = `
-        <div class="flex items-center justify-between h-full" style="min-height:250px;">
-          <div class="flex flex-col items-center gap-2 z-10">
-            <div class="w-20 h-20 rounded-2xl flex items-center justify-center" style="background:rgba(6,182,212,0.2);border:2px solid #06b6d4;">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <span class="text-xs font-bold mono" style="color:#06b6d4;">CLIENTE</span>
-          </div>
-          <div class="flex-1 mx-6 relative" style="height:60px;">
-            <div class="absolute top-1/2 left-0 right-0 h-px" style="background:#334155;"></div>
-            <div class="absolute top-[calc(50%-10px)] w-3 h-3 rounded-full packet" style="background:#06b6d4;box-shadow:0 0 12px #06b6d4;"></div>
-            <div class="absolute top-[calc(50%+4px)] w-3 h-3 rounded-full" style="background:#2dd4bf;box-shadow:0 0 12px #2dd4bf;animation:packet-move 2s linear infinite;animation-delay:1s;animation-direction:reverse;"></div>
-            <span class="absolute top-0 left-1/2 -translate-x-1/2 text-xs mono" style="color:#94a3b8;">GET /index.html →</span>
-            <span class="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs mono" style="color:#94a3b8;">← 200 OK</span>
-          </div>
-          <div class="flex flex-col items-center gap-2 z-10">
-            <div class="w-20 h-20 rounded-2xl flex items-center justify-center" style="background:rgba(45,212,191,0.2);border:2px solid #2dd4bf;">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1" fill="#2dd4bf"/><circle cx="6" cy="18" r="1" fill="#2dd4bf"/></svg>
-            </div>
-            <span class="text-xs font-bold mono" style="color:#2dd4bf;">SERVIDOR</span>
-          </div>
-        </div>`;
-    }
-  },
-  dns: {
-    title: "DNS Lookup",
-    steps: [
-      "1. El usuario escribe 'google.com' en el navegador",
-      "2. El navegador consulta al servidor DNS local",
-      "3. El DNS busca en su cache o consulta servidores raíz",
-      "4. El DNS responde con la IP: 142.250.80.46",
-      "5. El navegador conecta directamente con esa IP"
-    ],
-    render: (container) => {
-      container.innerHTML = `
-        <div class="flex flex-col items-center gap-6 py-4" style="min-height:250px;">
-          <div class="flex items-center gap-4 w-full justify-center">
-            <div class="px-4 py-2 rounded-xl mono text-sm" style="background:#0f172a;border:1px solid #06b6d4;color:#06b6d4;">google.com</div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            <div class="px-4 py-2 rounded-xl mono text-sm" style="background:#0f172a;border:1px solid #f59e0b;color:#f59e0b;">DNS Server</div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            <div class="px-4 py-2 rounded-xl mono text-sm" style="background:#0f172a;border:1px solid #2dd4bf;color:#2dd4bf;">142.250.80.46</div>
-          </div>
-          <div class="grid grid-cols-3 gap-4 w-full max-w-lg mt-4">
-            <div class="rounded-xl p-4 text-center" style="background:#0f172a;border:1px solid #334155;">
-              <div class="text-2xl mb-1">🌐</div>
-              <p class="text-xs" style="color:#94a3b8;">Navegador pregunta</p>
-            </div>
-            <div class="rounded-xl p-4 text-center" style="background:#0f172a;border:1px solid #f59e0b;">
-              <div class="text-2xl mb-1">📖</div>
-              <p class="text-xs" style="color:#f59e0b;">DNS traduce</p>
-            </div>
-            <div class="rounded-xl p-4 text-center" style="background:#0f172a;border:1px solid #2dd4bf;">
-              <div class="text-2xl mb-1">🖥️</div>
-              <p class="text-xs" style="color:#2dd4bf;">Servidor responde</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 mt-2">
-            <div class="w-2 h-2 rounded-full pulse-dot" style="background:#06b6d4;"></div>
-            <span class="text-xs mono" style="color:#94a3b8;">Resolviendo dominio...</span>
-          </div>
-        </div>`;
-    }
-  },
-  lb: {
-    title: "Load Balancer",
-    steps: [
-      "1. Miles de usuarios envían peticiones simultáneas",
-      "2. El Load Balancer recibe todas las peticiones",
-      "3. Distribuye cada petición al servidor menos ocupado",
-      "4. Los servidores procesan en paralelo",
-      "5. Las respuestas vuelven al cliente a través del balanceador"
-    ],
-    render: (container) => {
-      container.innerHTML = `
-        <div class="flex items-center justify-between py-4" style="min-height:250px;">
-          <div class="flex flex-col gap-3">
-            ${[1,2,3].map(i=>`<div class="flex items-center gap-2"><div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(6,182,212,0.15);border:1px solid #06b6d4;"><span class="text-sm">👤</span></div><span class="text-xs mono" style="color:#94a3b8;">User ${i}</span></div>`).join('')}
-          </div>
-          <div class="flex flex-col items-center mx-4">
-            <div class="relative">
-              <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:rgba(251,191,36,0.2);border:2px solid #f59e0b;">
-                <span class="text-xl">⚖️</span>
-              </div>
-              <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full pulse-dot" style="background:#f59e0b;"></div>
-            </div>
-            <span class="text-xs font-bold mono mt-2" style="color:#f59e0b;">BALANCER</span>
-          </div>
-          <div class="flex flex-col gap-3">
-            ${['A','B','C'].map((s,i)=>`<div class="flex items-center gap-2"><div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(45,212,191,0.15);border:1px solid #2dd4bf;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg></div><div><span class="text-xs mono" style="color:#2dd4bf;">Server ${s}</span><div class="w-16 h-1.5 rounded-full mt-1" style="background:#334155;"><div class="h-full rounded-full" style="background:#2dd4bf;width:${[30,70,45][i]}%;"></div></div></div></div>`).join('')}
-          </div>
-        </div>`;
-    }
-  },
-  db: {
-    title: "Servidor + Base de Datos",
-    steps: [
-      "1. El cliente envía una petición al servidor web",
-      "2. El servidor necesita datos, así que consulta la base de datos",
-      "3. La base de datos ejecuta la query (SELECT, INSERT, etc.)",
-      "4. La BD devuelve los resultados al servidor",
-      "5. El servidor formatea la respuesta y la envía al cliente"
-    ],
-    render: (container) => {
-      container.innerHTML = `
-        <div class="flex items-center justify-between py-4" style="min-height:250px;">
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:rgba(6,182,212,0.2);border:2px solid #06b6d4;">
-              <span class="text-2xl">💻</span>
-            </div>
-            <span class="text-xs font-bold mono" style="color:#06b6d4;">CLIENTE</span>
-          </div>
-          <div class="flex-1 mx-3 relative" style="height:20px;">
-            <div class="absolute top-1/2 left-0 right-0 h-px" style="background:#334155;"></div>
-            <div class="absolute top-[calc(50%-5px)] w-2.5 h-2.5 rounded-full packet" style="background:#06b6d4;box-shadow:0 0 8px #06b6d4;"></div>
-          </div>
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:rgba(45,212,191,0.2);border:2px solid #2dd4bf;">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
-            </div>
-            <span class="text-xs font-bold mono" style="color:#2dd4bf;">SERVIDOR</span>
-          </div>
-          <div class="flex-1 mx-3 relative" style="height:20px;">
-            <div class="absolute top-1/2 left-0 right-0 h-px" style="background:#334155;"></div>
-            <div class="absolute top-[calc(50%-5px)] w-2.5 h-2.5 rounded-full packet" style="background:#a78bfa;box-shadow:0 0 8px #a78bfa;"></div>
-          </div>
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:rgba(167,139,250,0.2);border:2px solid #a78bfa;">
-              <span class="text-2xl">🗄️</span>
-            </div>
-            <span class="text-xs font-bold mono" style="color:#a78bfa;">BASE DATOS</span>
-            <div class="text-xs mono px-3 py-1 rounded" style="background:#0f172a;color:#a78bfa;">SELECT * FROM users</div>
-          </div>
-        </div>`;
-    }
-  }
-};
+                    if(state.clearedNodes.includes(node.id)) {
+                        el.classList.add('cleared');
+                    } else if (reqMet && skillMet) {
+                        el.classList.add('available');
+                    } else {
+                        el.classList.add('locked');
+                    }
+                });
 
-function setScenario(id) {
-  currentScenario = id;
-  ['http','dns','lb','db'].forEach(s => {
-    const btn = document.getElementById('sc-'+s);
-    if (s===id) { btn.style.background='#06b6d4'; btn.style.color='#0f172a'; }
-    else { btn.style.background='#334155'; btn.style.color='#94a3b8'; }
-  });
-  renderScenario();
-}
+                MAP_EDGES.forEach(edge => {
+                    const line = document.getElementById(`line-${edge[0]}-${edge[1]}`);
+                    line.classList.remove('active', 'cleared');
+                    if(state.clearedNodes.includes(edge[0]) && state.clearedNodes.includes(edge[1])) {
+                        line.classList.add('cleared');
+                    } else if (state.clearedNodes.includes(edge[0]) || state.clearedNodes.includes(edge[1])) {
+                        line.classList.add('active');
+                    }
+                });
+            }
 
-function renderScenario() {
-  const sc = scenarios[currentScenario];
-  sc.render(document.getElementById('sim-container'));
-  const list = document.getElementById('sim-step-list');
-  list.innerHTML = '';
-  sc.steps.forEach(s => { const li = document.createElement('li'); li.textContent = s; list.appendChild(li); });
-}
+            function tryEnterNode(node) {
+                if(state.clearedNodes.includes(node.id)) {
+                    showDialog("NODO RESTAURADO", "Este sector ya opera a capacidad óptima. No se requiere intervención.");
+                    return;
+                }
+                
+                let reqMet = node.req.every(reqId => state.clearedNodes.includes(reqId));
+                let skillMet = !node.reqSkill || state.unlockedSkills.includes(node.reqSkill);
 
-function replayScenario() { renderScenario(); }
+                if(!reqMet) {
+                    showDialog("ACCESO DENEGADO", "Ruta bloqueada. Debes restaurar los nodos adyacentes primero.");
+                    return;
+                }
+                if(!skillMet) {
+                    const reqSkillName = SKILLS_DB[node.reqSkill].name;
+                    showDialog("ACCESO DENEGADO", `Protocolo de seguridad activo. Se requiere la habilidad cognitiva [${reqSkillName}] para procesar estos datos.`);
+                    return;
+                }
 
-// ========== GLOSSARY ==========
-function renderGlossary(terms) {
-  const container = document.getElementById('glossary-list');
-  container.innerHTML = '';
-  terms.forEach(t => {
-    const div = document.createElement('div');
-    div.className = 'rounded-xl p-4';
-    div.style.cssText = 'background:#1e293b;border:1px solid #334155;';
-    div.innerHTML = `<span class="font-bold text-sm" style="color:#06b6d4;">${t.term}</span><p class="text-sm mt-1" style="color:#94a3b8;">${t.def}</p>`;
-    container.appendChild(div);
-  });
-}
+                startCombat(node);
+            }
 
-function filterGlossary() {
-  const q = document.getElementById('glossary-search').value.toLowerCase();
-  renderGlossary(glossaryTerms.filter(t => t.term.toLowerCase().includes(q) || t.def.toLowerCase().includes(q)));
-}
+            function startCombat(node) {
+                state.currentNodeId = node.id;
+                
+                // Deep copy questions and shuffle slightly
+                state.combatState.questionsLeft = [...QUESTION_POOL[node.id]].sort(() => Math.random() - 0.5);
+                state.combatState.enemyMaxHp = state.combatState.questionsLeft.length * 10;
+                state.combatState.enemyHp = state.combatState.enemyMaxHp;
+                
+                els.sectorName.innerText = node.name.toUpperCase();
+                els.enemyName.innerText = node.type === 'boss' ? "AMENAZA MAYOR (JEFE)" : "CORRUPCIÓN MENOR";
+                if(node.type === 'boss') els.enemyName.classList.replace('text-red-400', 'text-red-500');
+                
+                updateCombatHUD();
+                switchView('combat');
+                
+                els.terminalOutput.innerHTML = `> Iniciando conexión con [${node.name}]...<br>> Obteniendo descriptores de datos...<br><br>`;
+                
+                setTimeout(nextQuestion, 1000);
+            }
 
-// ========== TABS ==========
-function switchTab(tab) {
-  ['flashcards','quiz','visual','glossary'].forEach(t => {
-    document.getElementById('section-'+t).classList.toggle('hidden', t!==tab);
-    const btn = document.getElementById('tab-'+t);
-    if (t===tab) { btn.classList.add('tab-active'); btn.style.color='#06b6d4'; btn.style.borderColor='#06b6d4'; }
-    else { btn.classList.remove('tab-active'); btn.style.color='#94a3b8'; btn.style.borderColor='transparent'; }
-  });
-}
+            function updateCombatHUD() {
+                els.enemyHp.style.width = `${(state.combatState.enemyHp / state.combatState.enemyMaxHp) * 100}%`;
+            }
 
-// ========== INIT ==========
-initData();
-renderCard();
-renderGlossary(glossaryTerms);
-renderScenario();
-lucide.createIcons();
-</script>
+            function nextQuestion() {
+                els.combatOptions.innerHTML = ''; // clear buttons
+                
+                if(state.combatState.questionsLeft.length === 0) {
+                    winCombat();
+                    return;
+                }
+
+                state.combatState.currentQuestion = state.combatState.questionsLeft.pop();
+                typeWriterEffect(`> SISTEMA PREGUNTA: ${state.combatState.currentQuestion.q}`, () => {
+                    // Show options after typing finishes
+                    state.combatState.currentQuestion.opts.forEach((opt, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-retro w-full h-full text-left p-4 leading-snug';
+                        btn.innerText = `[${index + 1}] ${opt}`;
+                        btn.onclick = () => handleAnswer(index);
+                        els.combatOptions.appendChild(btn);
+                    });
+                });
+            }
+
+            function typeWriterEffect(text, callback) {
+                if(state.combatState.typewriterInterval) clearInterval(state.combatState.typewriterInterval);
+                
+                const p = document.createElement('div');
+                p.className = 'mb-4 text-green-400';
+                els.terminalOutput.appendChild(p);
+                
+                let i = 0;
+                playSound('typing');
+                state.combatState.typewriterInterval = setInterval(() => {
+                    p.innerHTML += text.charAt(i);
+                    els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
+                    i++;
+                    if(i >= text.length) {
+                        clearInterval(state.combatState.typewriterInterval);
+                        if(callback) callback();
+                    }
+                }, 20); // typing speed
+            }
+
+            function appendTerminalMsg(msg, colorClass = "text-blue-200") {
+                const p = document.createElement('div');
+                p.className = `mb-2 ${colorClass}`;
+                p.innerHTML = msg;
+                els.terminalOutput.appendChild(p);
+                els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
+            }
+
+            function handleAnswer(selectedIndex) {
+                // Disable all buttons
+                Array.from(els.combatOptions.children).forEach(btn => btn.classList.add('disabled'));
+                
+                const q = state.combatState.currentQuestion;
+                
+                if(selectedIndex === q.a) {
+                    // Correct
+                    appendTerminalMsg("> RESPUESTA ACEPTADA. Daño infligido a la corrupción.", "text-green-400");
+                    state.combatState.enemyHp -= 10;
+                    updateCombatHUD();
+                    playSound('hit');
+                    els.views.combat.classList.add('glitch-effect');
+                    setTimeout(() => els.views.combat.classList.remove('glitch-effect'), 200);
+                    
+                    setTimeout(nextQuestion, 1500);
+                } else {
+                    // Incorrect
+                    appendTerminalMsg("> ERROR. DATOS INVÁLIDOS. Contramedida activada.", "text-red-500");
+                    takeDamage(15);
+                    
+                    if(state.hp > 0) {
+                        // Put question back at the beginning of array so they have to answer it again later
+                        state.combatState.questionsLeft.unshift(q);
+                        setTimeout(nextQuestion, 2000);
+                    }
+                }
+            }
+
+            function winCombat() {
+                const node = MAP_NODES.find(n => n.id === state.currentNodeId);
+                state.clearedNodes.push(node.id);
+                
+                appendTerminalMsg(`> NODO [${node.name}] RESTAURADO CON ÉXITO.`, "text-glow-green text-xl mt-4");
+                addXp(50);
+                
+                setTimeout(() => {
+                    if(node.skillReward && !state.unlockedSkills.includes(node.skillReward)) {
+                        state.unlockedSkills.push(node.skillReward);
+                        const skill = SKILLS_DB[node.skillReward];
+                        showDialog("NUEVA HABILIDAD ADQUIRIDA", `[${skill.icon} ${skill.name}]\n\n${skill.desc}`);
+                        
+                        if(node.skillReward === 'overclock') state.maxHp += 30; state.hp = state.maxHp; updateHUD();
+                    }
+                    
+                    if(node.id === "node_router") {
+                        showDialog("¡SISTEMA TOTALMENTE RESTAURADO!", "Felicidades, Explorador. Has derrotado al Nexo Final y reconstruido la topología de la red. Has demostrado dominio en Hardware y Redes de Computadores. Eres una leyenda digital.");
+                    }
+                    
+                    switchView('map');
+                }, 2000);
+            }
+
+            function renderSkills() {
+                els.skillsContainer.innerHTML = '';
+                
+                Object.keys(SKILLS_DB).forEach(key => {
+                    const skill = SKILLS_DB[key];
+                    const isUnlocked = state.unlockedSkills.includes(key);
+                    
+                    const el = document.createElement('div');
+                    el.className = `p-6 border-2 rounded flex flex-col items-center text-center transition-all ${isUnlocked ? 'border-neon-green bg-[#00ff6611] shadow-[0_0_15px_rgba(0,255,102,0.3)]' : 'border-gray-700 bg-gray-900 opacity-60'}`;
+                    
+                    el.innerHTML = `
+                        <div class="text-4xl mb-4 ${isUnlocked ? '' : 'grayscale'}">${skill.icon}</div>
+                        <h3 class="pixel-text text-sm mb-2 ${isUnlocked ? 'text-glow-green' : 'text-gray-500'}">${skill.name}</h3>
+                        <p class="text-xs font-sans text-gray-300 h-16">${isUnlocked ? skill.desc : 'Datos encriptados. Restaura los nodos Jefe para acceder.'}</p>
+                        <div class="mt-4 text-[10px] pixel-text ${isUnlocked ? 'text-green-400' : 'text-red-500'}">
+                            [ ${isUnlocked ? 'ACTIVO' : 'BLOQUEADO'} ]
+                        </div>
+                    `;
+                    els.skillsContainer.appendChild(el);
+                });
+            }
+
+            // Simple sound generator using Web Audio API for retro beeps
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            function playSound(type) {
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if(type === 'start') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                } else if(type === 'hit') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if(type === 'error') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                } else if(type === 'typing') {
+                    // Very short subtle click
+                    osc.type = 'square'; osc.frequency.setValueAtTime(800 + Math.random()*200, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.02, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+                }
+            }
+
+            return { init, start, switchView, closeDialog };
+        })();
+
+        // Initialize on load
+        window.onload = Game.init;
+    </script>
 </body>
 </html>
