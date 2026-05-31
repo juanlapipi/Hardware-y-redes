@@ -3,803 +3,1575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS PRIME: Protocolo de Restauración</title>
+    <title>RedQuest Cybervania — v2.0</title>
+    <meta name="description" content="Sistema de entrenamiento táctico en ciberseguridad y tecnología">
+    <meta name="theme-color" content="#050508">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg-color: #050508;
-            --neon-blue: #00f3ff;
-            --neon-pink: #ff003c;
-            --neon-green: #00ff66;
-            --text-main: #e0e0e0;
-            --grid-color: rgba(0, 243, 255, 0.1);
+            --cyan: #22d3ee;
+            --emerald: #34d399;
+            --fuchsia: #e879f9;
+            --rose: #fb7185;
+            --amber: #fbbf24;
+            --neon-glow: 0 0 8px currentColor, 0 0 20px currentColor;
         }
+
+        *, *::before, *::after { box-sizing: border-box; }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'VT323', monospace;
-            overflow: hidden; /* Prevent scrolling, keep it like a game screen */
+            font-family: 'Share Tech Mono', monospace;
+            background-color: #050508;
+            color: #cbd5e1;
             margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow-x: hidden;
+            background-image: radial-gradient(ellipse at 20% 20%, #0d1117 0%, #050508 60%, #000 100%);
         }
 
-        /* CRT Effects */
-        .crt::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 50;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
+        /* Scanlines sutil */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+            pointer-events: none; z-index: 100; animation: scanmove 8s linear infinite;
         }
-        
-        .scanline {
-            width: 100%;
-            height: 100px;
-            z-index: 49;
-            position: absolute;
-            pointer-events: none;
-            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,243,255,0.1) 50%, rgba(0,0,0,0) 100%);
-            opacity: 0.3;
-            animation: scanline 6s linear infinite;
+        @keyframes scanmove { from { background-position: 0 0; } to { background-position: 0 100px; } }
+
+        /* Viñeta CRT */
+        .crt-vignette {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, rgba(0,0,0,0) 55%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none; z-index: 99;
         }
 
-        @keyframes scanline {
-            0% { transform: translateY(-100vh); }
-            100% { transform: translateY(100vh); }
-        }
-
-        #game-container {
-            width: 100%;
-            max-width: 1200px;
-            height: 100%;
-            max-height: 800px;
-            position: relative;
-            background-color: #0a0a0f;
-            border: 2px solid var(--neon-blue);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 30px rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Grid Background */
+        /* Grid cyberpunk */
         .cyber-grid {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: 
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            position: fixed; inset: 0; pointer-events: none; opacity: 0.025; z-index: 1;
+            background-image: linear-gradient(#4f46e5 1px, transparent 1px), linear-gradient(90deg, #4f46e5 1px, transparent 1px);
             background-size: 40px 40px;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.5;
-            perspective: 500px;
         }
 
-        h1, h2, h3, .pixel-text {
-            font-family: 'Press Start 2P', cursive;
-        }
-
-        .text-glow-blue { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
-        .text-glow-pink { text-shadow: 0 0 5px var(--neon-pink), 0 0 10px var(--neon-pink); }
-        .text-glow-green { text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green); }
-
-        .btn-retro {
-            background-color: transparent;
-            color: var(--neon-blue);
-            border: 2px solid var(--neon-blue);
-            padding: 10px 20px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-retro:hover {
-            background-color: var(--neon-blue);
-            color: #000;
-            box-shadow: 0 0 15px var(--neon-blue);
-        }
-
-        .btn-retro.disabled {
-            border-color: #555;
-            color: #555;
-            cursor: not-allowed;
-        }
-        .btn-retro.disabled:hover {
-            background-color: transparent;
-            box-shadow: none;
-        }
-
-        .map-node {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #555;
-            background-color: #111;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.3s;
-            transform: translate(-50%, -50%);
-        }
-
-        .map-node.cleared {
-            border-color: var(--neon-green);
-            background-color: rgba(0, 255, 102, 0.2);
-            box-shadow: 0 0 15px var(--neon-green);
-        }
-
-        .map-node.available {
-            border-color: var(--neon-blue);
-            background-color: rgba(0, 243, 255, 0.2);
-            animation: pulse-node 2s infinite;
-        }
-
-        .map-node.locked {
-            border-color: var(--neon-pink);
-            background-color: rgba(255, 0, 60, 0.1);
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        @keyframes pulse-node {
-            0% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(0, 243, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0); }
-        }
-
-        .map-line {
-            position: absolute;
-            background-color: #555;
-            transform-origin: 0 50%;
-            z-index: 5;
-            height: 4px;
-        }
-        
-        .map-line.active { background-color: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
-        .map-line.cleared { background-color: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
-
-        /* Dialog Box */
-        .dialog-box {
-            background: rgba(5, 5, 10, 0.9);
-            border: 2px solid var(--neon-blue);
-            border-radius: 8px;
-            padding: 20px;
-            position: absolute;
-            bottom: 20px;
-            left: 20%;
-            right: 20%;
-            z-index: 100;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
-        }
-
-        /* Animations */
-        @keyframes flash-damage {
-            0% { background-color: rgba(255,0,0,0); }
-            50% { background-color: rgba(255,0,60,0.5); }
-            100% { background-color: rgba(255,0,0,0); }
-        }
-        .damage-flash { animation: flash-damage 0.3s ease-out; }
-
+        /* Animaciones */
+        @keyframes float-stagger { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes scan { from { top:0; } to { top:100%; } }
+        @keyframes pulse-ring { 0%,100% { opacity:.3; transform:scale(1); } 50% { opacity:.6; transform:scale(1.05); } }
         @keyframes glitch {
-            0% { transform: translate(0) }
-            20% { transform: translate(-2px, 2px) }
-            40% { transform: translate(-2px, -2px) }
-            60% { transform: translate(2px, 2px) }
-            80% { transform: translate(2px, -2px) }
-            100% { transform: translate(0) }
+            0% { transform: translate(0); filter: none; }
+            20% { transform: translate(-3px, 2px); filter: hue-rotate(90deg); }
+            40% { transform: translate(3px, -2px); filter: hue-rotate(-90deg); }
+            60% { transform: translate(-2px, 1px); filter: invert(0.15); }
+            80% { transform: translate(2px, -1px); filter: none; }
+            100% { transform: translate(0); filter: none; }
         }
-        .glitch-effect { animation: glitch 0.2s infinite; }
+        @keyframes combo-pop { 0% { transform:scale(0.5) rotate(-10deg); opacity:0; } 60% { transform:scale(1.2) rotate(3deg); opacity:1; } 100% { transform:scale(1) rotate(0); opacity:1; } }
+        @keyframes timer-drain { from { width: 100%; } to { width: 0%; } }
+        @keyframes achievement-slide { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+        @keyframes streak-flash { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
 
-        /* Health Bar */
-        .health-bar-bg { width: 100%; height: 20px; background: #222; border: 2px solid #555; }
-        .health-bar-fill { height: 100%; background: var(--neon-green); transition: width 0.3s; }
-        .health-bar-fill.enemy { background: var(--neon-pink); }
+        .glitch-anim { animation: glitch 0.4s ease-out; }
+        .combo-pop { animation: combo-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .achievement-slide { animation: achievement-slide 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        .hide { display: none !important; }
+        /* Vistas */
+        .view-section { display: none; }
+        .view-section.active { display: flex; animation: fadeInUp 0.4s ease-out forwards; }
+
+        /* Botones retro */
+        .btn-retro {
+            transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px;
+            position: relative; overflow: hidden; cursor: pointer;
+        }
+        .btn-retro::before {
+            content: ''; position: absolute; inset: 0;
+            background: currentColor; opacity: 0; transition: opacity 0.2s;
+        }
+        .btn-retro:hover::before { opacity: 0.1; }
+        .btn-retro:hover { transform: scale(1.03); }
+        .btn-retro:active { transform: scale(0.98); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #1d4ed8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+        /* Selection */
+        ::selection { background: rgba(34,211,238,0.25); }
+
+        /* Timer bar */
+        .timer-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #22d3ee, #3b82f6);
+            transition: background 0.5s;
+        }
+        .timer-warning .timer-bar-inner { background: linear-gradient(90deg, #fb7185, #f97316); }
+        .timer-critical .timer-bar-inner { background: #fb7185; animation: streak-flash 0.3s infinite; }
+
+        /* Achievement toast */
+        #achievement-toast {
+            position: fixed; bottom: 90px; right: 24px; z-index: 999;
+            background: #0a0a1a; border: 1px solid #fbbf24;
+            box-shadow: 0 0 20px rgba(251,191,36,0.3); padding: 12px 16px;
+            max-width: 280px; display: none;
+        }
+
+        /* Scan line en panel lateral del quiz */
+        .scan-effect { animation: scan 2.5s linear infinite; }
+
+        /* Custom focus para accesibilidad */
+        button:focus-visible, a:focus-visible, input:focus-visible {
+            outline: 2px solid #22d3ee;
+            outline-offset: 2px;
+        }
+
+        /* Respeto a prefers-reduced-motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Estilos responsivos para quiz */
+        @media (max-width: 768px) {
+            .quiz-mobile-header { display: flex !important; }
+            .quiz-side-panel { display: none !important; }
+            .quiz-main { grid-template-columns: 1fr !important; }
+        }
+
+        /* Tooltip */
+        .tooltip { position: relative; }
+        .tooltip::after {
+            content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%;
+            transform: translateX(-50%); background: #0f172a; border: 1px solid #334155;
+            color: #94a3b8; font-size: 11px; padding: 4px 8px; white-space: nowrap;
+            pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 50;
+        }
+        .tooltip:hover::after { opacity: 1; }
+
+        /* Progreso visual de mundos */
+        .world-node { transition: all 0.3s; }
+        .world-node.locked { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.7); }
+        .world-node.completed { opacity: 0.7; }
+        .world-node.available { cursor: pointer; }
+        .world-node.available:hover { transform: translateY(-2px); }
+
+        /* Streak indicator */
+        #streak-display {
+            position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
+            z-index: 200; pointer-events: none;
+        }
     </style>
 </head>
-<body class="bg-black crt">
-    
-    <div class="scanline"></div>
+<body class="min-h-screen flex flex-col relative" role="main">
 
-    <div id="game-container" class="relative">
-        <div class="cyber-grid"></div>
+    <!-- Overlays visuales -->
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="crt-vignette" aria-hidden="true"></div>
+    <div class="cyber-grid" aria-hidden="true"></div>
 
-        <!-- HUD (Heads Up Display) -->
-        <div id="hud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start z-40 hide bg-black/60 border-b border-[rgba(0,243,255,0.3)] backdrop-blur-sm">
-            <div class="flex gap-6">
-                <div>
-                    <div class="pixel-text text-xs text-blue-400 mb-1">NIVEL LÓGICO</div>
-                    <div class="text-3xl text-glow-blue" id="hud-level">01</div>
-                </div>
-                <div class="w-48">
-                    <div class="pixel-text text-xs text-green-400 mb-1">INTEGRIDAD (HP)</div>
-                    <div class="health-bar-bg"><div id="hud-hp" class="health-bar-fill" style="width: 100%;"></div></div>
-                </div>
-                <div class="w-48">
-                    <div class="pixel-text text-xs text-purple-400 mb-1">DATOS (XP)</div>
-                    <div class="health-bar-bg"><div id="hud-xp" class="health-bar-fill" style="background: #a855f7; width: 0%;"></div></div>
+    <!-- Streak display flotante -->
+    <div id="streak-display" aria-live="polite" aria-label="Racha de respuestas correctas"></div>
+
+    <!-- Achievement Toast -->
+    <div id="achievement-toast" role="alert" aria-live="assertive">
+        <div class="text-yellow-400 text-xs tracking-widest mb-1 flex items-center gap-2">
+            <i class="ph-fill ph-star" aria-hidden="true"></i> LOGRO DESBLOQUEADO
+        </div>
+        <div id="achievement-name" class="text-white font-bold text-sm"></div>
+        <div id="achievement-desc" class="text-slate-400 text-xs mt-1"></div>
+    </div>
+
+    <!-- PANTALLA DE CARGA -->
+    <div id="loading-screen" class="fixed inset-0 bg-[#050505] flex items-center justify-center z-[300]" role="status" aria-label="Cargando RedQuest">
+        <div class="flex flex-col items-center gap-4 text-cyan-500">
+            <div class="relative">
+                <i class="ph-fill ph-lightning text-5xl animate-pulse" aria-hidden="true"></i>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-16 h-16 border border-cyan-500/30 rounded-full animate-ping"></div>
                 </div>
             </div>
-            <div class="flex gap-4">
-                <button onclick="Game.switchView('map')" class="btn-retro !px-3 !py-2 text-[10px]">MAPA</button>
-                <button onclick="Game.switchView('skills')" class="btn-retro !px-3 !py-2 text-[10px]">HABILIDADES</button>
+            <div class="flex flex-col items-center gap-1">
+                <span class="tracking-[0.4em] text-sm animate-pulse">INICIALIZANDO SISTEMA...</span>
+                <div id="boot-log" class="text-xs text-cyan-800 tracking-wider text-center"></div>
             </div>
         </div>
+    </div>
 
-        <!-- VIEW 1: INTRO / MAIN MENU -->
-        <div id="view-intro" class="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/80 backdrop-blur-md">
-            <h1 class="pixel-text text-5xl md:text-6xl text-glow-blue text-center leading-tight mb-4">
-                NEXUS PRIME<br>
-                <span class="text-2xl text-glow-pink">HARDWARE HUNTER</span>
-            </h1>
-            <p class="text-xl text-gray-400 max-w-2xl text-center mb-12">
-                Sistema de Archivos Corrompido. El conocimiento de Hardware y Redes se ha fragmentado. Eres el programa explorador diseñado para restaurar el Núcleo. 
-            </p>
-            <button onclick="Game.start()" class="btn-retro text-xl px-8 py-4 animate-pulse">INICIAR SECUENCIA</button>
-        </div>
+    <!-- CONTENIDO PRINCIPAL -->
+    <div id="app-content" class="flex-1 flex flex-col relative z-10 w-full" style="display:none;">
 
-        <!-- VIEW 2: MAP (METROIDVANIA) -->
-        <div id="view-map" class="absolute inset-0 z-20 hide pt-24 pb-8 px-8 overflow-hidden">
-            <h2 class="pixel-text text-xl text-glow-blue mb-4 text-center">NEXUS GLOBAL: SECTOR HARDWARE Y REDES</h2>
-            <div class="relative w-full h-[500px] border border-blue-900 bg-[#050510]/80 rounded-lg overflow-hidden" id="map-container">
-                <!-- Map nodes will be injected here via JS -->
+        <!-- HEADER / HUD -->
+        <header class="border-b border-cyan-900/40 bg-[#050508]/90 backdrop-blur-md sticky top-0 z-40" role="banner">
+            <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" aria-hidden="true"></div>
+            <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3 px-4 py-3">
+
+                <!-- Logo -->
+                <button onclick="window.setView('home')" class="flex items-center gap-3 group" aria-label="RedQuest - Inicio">
+                    <div class="p-1.5 border border-cyan-500/60 text-cyan-400 group-hover:bg-cyan-500 group-hover:text-black transition-all shadow-[0_0_8px_rgba(34,211,238,0.2)]">
+                        <i class="ph ph-terminal-window text-xl" aria-hidden="true"></i>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-[0.15em] text-white group-hover:text-cyan-400 transition-colors" style="font-family:'Orbitron',monospace">
+                        RED<span class="text-cyan-500">QUEST</span>
+                        <span class="text-xs text-cyan-700 ml-1 font-normal">v2.0</span>
+                    </h1>
+                </button>
+
+                <!-- Nav -->
+                <nav class="flex items-center gap-1 sm:gap-4 text-xs sm:text-sm" role="navigation" aria-label="Navegación principal">
+                    <button onclick="window.setView('map')" class="hover:text-cyan-400 transition-colors px-2 py-1 hidden sm:flex items-center gap-1.5 hover:bg-cyan-950/30 rounded" aria-label="Ver mapa de sectores">
+                        <i class="ph-fill ph-map-trifold" aria-hidden="true"></i>
+                        <span class="uppercase tracking-wider">Sectores</span>
+                    </button>
+                    <button onclick="window.setView('profile')" class="hover:text-cyan-400 transition-colors px-2 py-1 flex items-center gap-1.5 hover:bg-cyan-950/30 rounded" aria-label="Ver mi perfil de agente">
+                        <i class="ph-fill ph-user-circle" aria-hidden="true"></i>
+                        <span class="uppercase tracking-wider hidden sm:inline">Agente</span>
+                    </button>
+                    <button onclick="window.setView('ranking')" class="hover:text-cyan-400 transition-colors px-2 py-1 flex items-center gap-1.5 hover:bg-cyan-950/30 rounded" aria-label="Ver ranking global">
+                        <i class="ph-fill ph-trophy" aria-hidden="true"></i>
+                        <span class="uppercase tracking-wider hidden sm:inline">Rango</span>
+                    </button>
+                    <button onclick="window.setView('credits')" class="hover:text-cyan-400 transition-colors px-2 py-1 flex items-center gap-1.5 hover:bg-cyan-950/30 rounded" aria-label="Ver información del sistema">
+                        <i class="ph-fill ph-info" aria-hidden="true"></i>
+                        <span class="sr-only">Databanks</span>
+                    </button>
+
+                    <!-- HUD de EXP -->
+                    <div id="hud-exp" class="hidden items-center gap-1.5 bg-[#0a0a1a]/80 py-1 px-2.5 border border-yellow-500/40 shadow-[0_0_8px_rgba(234,179,8,0.15)] ml-1" role="status" aria-label="Experiencia del agente">
+                        <i class="ph-fill ph-lightning text-yellow-400 text-sm" aria-hidden="true"></i>
+                        <span id="hud-exp-val" class="font-bold text-yellow-400 text-sm">0 EXP</span>
+                    </div>
+
+                    <!-- Indicador de racha -->
+                    <div id="hud-streak" class="hidden items-center gap-1 bg-orange-950/40 py-1 px-2 border border-orange-500/40 ml-0.5" role="status" aria-label="Racha actual">
+                        <i class="ph-fill ph-fire text-orange-400 text-sm" aria-hidden="true"></i>
+                        <span id="hud-streak-val" class="font-bold text-orange-400 text-sm">0</span>
+                    </div>
+                </nav>
             </div>
-            <div class="mt-4 flex justify-center gap-6 text-sm">
-                <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[rgba(0,255,102,0.5)] border border-green-500"></div> Restaurado</span>
-                <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[rgba(0,243,255,0.5)] border border-blue-500"></div> Accesible</span>
-                <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[rgba(255,0,60,0.3)] border border-red-500"></div> Corrompido/Bloqueado</span>
-            </div>
-        </div>
+        </header>
 
-        <!-- VIEW 3: COMBAT/LEARNING TERMINAL -->
-        <div id="view-combat" class="absolute inset-0 z-20 hide pt-24 flex flex-col items-center">
-            
-            <div class="w-full max-w-4xl px-8 flex justify-between items-end mb-4">
-                <div class="w-1/3">
-                    <!-- Enemy Stats -->
-                    <div class="pixel-text text-xs text-red-400 mb-1" id="enemy-name">ANOMALÍA DETECTADA</div>
-                    <div class="health-bar-bg"><div id="enemy-hp" class="health-bar-fill enemy" style="width: 100%;"></div></div>
+        <!-- VIEWPORT PRINCIPAL -->
+        <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 flex flex-col relative z-10">
+
+            <!-- ===== VISTA: HOME ===== -->
+            <div id="view-home" class="view-section flex-col items-center justify-center flex-1 text-center py-8 sm:py-12" role="region" aria-label="Pantalla de inicio">
+                <div class="max-w-3xl relative">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-cyan-600/15 blur-[80px] pointer-events-none" aria-hidden="true"></div>
+
+                    <p class="text-cyan-600 tracking-[0.4em] text-xs mb-4 animate-pulse uppercase">Sistema de Entrenamiento Táctico</p>
+
+                    <h2 class="text-5xl sm:text-7xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-200 to-cyan-600 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)] tracking-widest uppercase leading-tight" style="font-family:'Orbitron',monospace">
+                        RedQuest
+                    </h2>
+                    <p class="text-cyan-700 text-xs tracking-[0.3em] mb-8">CYBERVANIA EDITION · v2.0</p>
+
+                    <!-- Feature cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                        <div class="bg-[#0a0a1a] border border-cyan-900/50 p-3 text-left">
+                            <i class="ph-fill ph-globe-hemisphere-west text-cyan-500 text-lg mb-1" aria-hidden="true"></i>
+                            <div class="text-white text-xs font-bold">5 Sectores</div>
+                            <div class="text-cyan-700 text-xs">de infiltración</div>
+                        </div>
+                        <div class="bg-[#0a0a1a] border border-emerald-900/50 p-3 text-left">
+                            <i class="ph-fill ph-clock-countdown text-emerald-500 text-lg mb-1" aria-hidden="true"></i>
+                            <div class="text-white text-xs font-bold">Timer táctico</div>
+                            <div class="text-emerald-700 text-xs">presión real</div>
+                        </div>
+                        <div class="bg-[#0a0a1a] border border-fuchsia-900/50 p-3 text-left">
+                            <i class="ph-fill ph-trophy text-fuchsia-500 text-lg mb-1" aria-hidden="true"></i>
+                            <div class="text-white text-xs font-bold">Ranking global</div>
+                            <div class="text-fuchsia-700 text-xs">en tiempo real</div>
+                        </div>
+                        <div class="bg-[#0a0a1a] border border-amber-900/50 p-3 text-left">
+                            <i class="ph-fill ph-star text-amber-500 text-lg mb-1" aria-hidden="true"></i>
+                            <div class="text-white text-xs font-bold">Logros</div>
+                            <div class="text-amber-700 text-xs">desbloqueables</div>
+                        </div>
+                    </div>
+
+                    <button id="btn-start" onclick="window.handleStartClick()"
+                        class="btn-retro bg-[#050508] border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-black text-lg font-bold py-3 px-10 shadow-[0_0_15px_rgba(34,211,238,0.3)] mx-auto flex items-center gap-3 relative overflow-hidden group"
+                        style="font-family:'Orbitron',monospace" aria-label="Iniciar RedQuest">
+                        <span class="absolute inset-0 bg-cyan-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-0" aria-hidden="true"></span>
+                        <i class="ph-fill ph-play text-xl z-10 relative" aria-hidden="true"></i>
+                        <span class="z-10 relative" id="btn-start-text">INICIAR ENLACE</span>
+                    </button>
+                    <p id="home-insert-coin" class="mt-6 text-cyan-800 text-xs tracking-[0.4em] animate-pulse" aria-hidden="true">INSERT COIN TO PLAY</p>
                 </div>
-                <div class="text-right">
-                    <div class="pixel-text text-glow-pink text-2xl" id="combat-sector-name">SECTOR CPU</div>
+            </div>
+
+            <!-- ===== VISTA: REGISTRO ===== -->
+            <div id="view-register" class="view-section flex-col items-center justify-center flex-1 py-8" role="region" aria-label="Registro de agente">
+                <div class="bg-[#0a0a1a] border border-cyan-500/40 p-8 w-full max-w-md shadow-[0_0_30px_rgba(34,211,238,0.1)] relative">
+                    <div class="absolute top-0 left-0 p-1 bg-cyan-500/10 border-b border-r border-cyan-500/40 text-[10px] text-cyan-600 tracking-widest">SYS.LOGIN_v2</div>
+
+                    <i class="ph ph-crosshair text-5xl text-cyan-500 mx-auto mb-5 block text-center animate-[spin_12s_linear_infinite]" aria-hidden="true"></i>
+
+                    <div class="text-center mb-6">
+                        <h2 class="text-xl font-bold text-white mb-2 tracking-widest uppercase" style="font-family:'Orbitron',monospace">Identificación</h2>
+                        <p class="text-cyan-700 text-xs leading-relaxed">Ingrese su indicativo de agente para el registro en la base de datos central. Máx. 15 caracteres.</p>
+                    </div>
+
+                    <div class="relative mb-6 group">
+                        <label for="input-agent-name" class="sr-only">Nombre de agente</label>
+                        <i class="ph-fill ph-terminal-window absolute left-3 top-1/2 -translate-y-1/2 text-lg text-cyan-700 group-focus-within:text-cyan-400 transition-colors" aria-hidden="true"></i>
+                        <input type="text" id="input-agent-name" required maxlength="15"
+                            placeholder="ID_AGENTE" autocomplete="username" spellcheck="false"
+                            class="w-full bg-[#050508] border border-cyan-800 p-3.5 pl-10 text-cyan-300 placeholder-cyan-900 focus:outline-none focus:border-cyan-400 focus:shadow-[0_0_12px_rgba(34,211,238,0.25)] transition-all uppercase tracking-widest text-sm"
+                            aria-describedby="name-hint"/>
+                        <p id="name-hint" class="text-cyan-800 text-xs mt-1 ml-1">Solo letras y números.</p>
+                    </div>
+                    <p id="register-error" class="text-rose-500 text-xs mb-4 hidden" role="alert"></p>
+                    <button type="button" onclick="window.handleRegisterSubmit()"
+                        class="w-full btn-retro bg-cyan-900/20 border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black font-bold py-3.5 transition-colors flex items-center justify-center gap-2 text-sm">
+                        AUTORIZAR ACCESO <i class="ph-bold ph-caret-right text-lg" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Terminal Window -->
-            <div class="w-full max-w-4xl h-[450px] border-2 border-blue-500 bg-black/90 p-6 flex flex-col shadow-[0_0_20px_rgba(0,243,255,0.2)]">
-                
-                <!-- Lore/Question Area -->
-                <div class="flex-1 overflow-y-auto mb-4 border-b border-blue-900 pb-4 text-xl leading-relaxed text-blue-100" id="terminal-output">
-                    > Iniciando análisis del nodo...<br>
+            <!-- ===== VISTA: MAPA ===== -->
+            <div id="view-map" class="view-section flex-col flex-1 py-6" role="region" aria-label="Mapa de sectores">
+                <div class="mb-8 flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4 border-l-4 border-cyan-500 pl-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white tracking-widest uppercase" style="font-family:'Orbitron',monospace">Sectores de Operación</h2>
+                        <p class="text-cyan-600 text-xs tracking-widest mt-1">SELECCIONE OBJETIVO PARA INFILTRACIÓN</p>
+                    </div>
+                    <!-- Barra de progreso global -->
+                    <div class="sm:ml-auto flex items-center gap-3 text-xs">
+                        <span class="text-slate-500 tracking-wider">PROGRESO GLOBAL</span>
+                        <div class="w-32 h-2 bg-black border border-slate-700 relative overflow-hidden">
+                            <div id="global-progress-bar" class="h-full bg-cyan-500 transition-all duration-500" style="width:0%"></div>
+                        </div>
+                        <span id="global-progress-text" class="text-cyan-400 font-bold">0/5</span>
+                    </div>
+                </div>
+                <div id="map-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" role="list" aria-label="Lista de sectores disponibles">
+                </div>
+            </div>
+
+            <!-- ===== VISTA: BRIEFING (NUEVA) ===== -->
+            <div id="view-briefing" class="view-section flex-col max-w-4xl w-full mx-auto py-6" role="region" aria-label="Inteligencia del sector">
+                <div id="briefing-content" class="w-full">
+                    <!-- Contenido inyectado dinámicamente -->
+                </div>
+            </div>
+
+            <!-- ===== VISTA: QUIZ ===== -->
+            <div id="view-quiz" class="view-section flex-col max-w-4xl w-full mx-auto py-4" role="region" aria-label="Quiz en progreso">
+                <!-- Header Quiz -->
+                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                    <button onclick="window.confirmAbort()" class="text-slate-600 hover:text-white flex items-center gap-1 transition-colors text-xs tracking-widest uppercase hover:bg-rose-950/30 px-2 py-1 rounded" aria-label="Abortar misión y volver al mapa">
+                        <i class="ph-bold ph-caret-left" aria-hidden="true"></i> ABORTAR
+                    </button>
+                    <div class="flex items-center gap-4">
+                        <span id="quiz-progress-text" class="text-xs tracking-widest font-bold" aria-live="polite">NODO 1/X</span>
+                        <div class="w-28 h-1.5 bg-black border border-slate-800" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso del quiz">
+                            <div id="quiz-progress-bar" class="h-full transition-all duration-300" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div id="quiz-score-display" class="text-xs text-yellow-400 flex items-center gap-1 font-bold" aria-live="polite">
+                        <i class="ph-fill ph-lightning text-xs" aria-hidden="true"></i>
+                        <span id="quiz-score-val">0</span>
+                    </div>
                 </div>
 
-                <!-- Interactive Area (Options) -->
-                <div id="combat-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 h-48">
-                    <!-- Buttons injected via JS -->
+                <!-- Timer -->
+                <div id="timer-bar-wrap" class="w-full h-1.5 bg-black border border-slate-900 mb-4 overflow-hidden" role="timer" aria-label="Tiempo restante">
+                    <div id="timer-bar" class="timer-bar-inner" style="width:100%"></div>
                 </div>
-                
-            </div>
-        </div>
+                <div class="flex justify-end mb-2">
+                    <span id="timer-label" class="text-xs text-slate-600 font-mono" aria-live="polite">30s</span>
+                </div>
 
-        <!-- VIEW 4: SKILL TREE -->
-        <div id="view-skills" class="absolute inset-0 z-20 hide pt-24 px-8">
-            <h2 class="pixel-text text-2xl text-glow-blue mb-8 text-center">ÁRBOL DE HABILIDADES COGNITIVAS</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto" id="skills-container">
-                <!-- Skills injected via JS -->
-            </div>
-        </div>
+                <div class="grid md:grid-cols-[1fr_2fr] gap-6 quiz-main">
+                    <!-- Panel lateral (desktop) -->
+                    <div id="quiz-side-panel" class="hidden md:flex quiz-side-panel flex-col items-center justify-center p-6 bg-[#0a0a1a] border border-slate-800 relative overflow-hidden" aria-hidden="true">
+                        <div id="quiz-bg-icon" class="absolute inset-0 flex items-center justify-center opacity-[0.07] text-[12rem] pointer-events-none"></div>
+                        <div id="quiz-main-icon" class="z-10 text-5xl"></div>
+                        <div class="z-10 mt-3 text-center">
+                            <div class="text-xs text-slate-600 tracking-widest">OBJETIVO</div>
+                            <div id="quiz-objective-title" class="font-bold uppercase tracking-wider text-white text-sm mt-1"></div>
+                        </div>
+                        <!-- Scanner animado -->
+                        <div id="quiz-scanner" class="absolute top-0 left-0 w-full h-0.5 scan-effect" style="box-shadow:0 0 10px currentColor"></div>
+                    </div>
 
-        <!-- SYSTEM DIALOG (Custom Alert) -->
-        <div id="system-dialog" class="dialog-box hide flex flex-col items-center text-center">
-            <h3 class="pixel-text text-glow-pink text-xl mb-4" id="dialog-title">ALERTA DEL SISTEMA</h3>
-            <p class="text-lg mb-6 text-gray-300" id="dialog-message">Mensaje...</p>
-            <button onclick="Game.closeDialog()" class="btn-retro">ENTENDIDO</button>
-        </div>
+                    <!-- Panel preguntas -->
+                    <div class="flex flex-col">
+                        <!-- Indicador móvil de mundo -->
+                        <div id="quiz-mobile-header" class="quiz-mobile-header hidden items-center gap-3 mb-4 p-3 bg-[#0a0a1a] border border-slate-800">
+                            <div id="quiz-mobile-icon" class="text-2xl"></div>
+                            <div id="quiz-mobile-title" class="text-sm font-bold text-white tracking-wider"></div>
+                        </div>
+
+                        <!-- Pregunta -->
+                        <div class="bg-[#050508] border border-slate-800 p-5 sm:p-7 mb-4 relative">
+                            <div class="absolute top-0 left-0 w-1.5 h-full bg-slate-700" id="quiz-question-accent"></div>
+                            <h3 id="quiz-question-text" class="text-lg sm:text-xl font-sans text-white leading-relaxed pl-2" aria-live="polite"></h3>
+                        </div>
+
+                        <!-- Opciones -->
+                        <div id="quiz-options-container" class="flex flex-col gap-2.5" role="group" aria-label="Opciones de respuesta"></div>
+
+                        <!-- Feedback + Explicación -->
+                        <div id="quiz-feedback-wrap" class="hidden mt-4" role="status" aria-live="assertive">
+                            <div id="quiz-feedback" class="p-3 text-center tracking-widest text-xs border font-bold mb-2"></div>
+                            <div id="quiz-explanation" class="p-4 bg-slate-900/60 border border-slate-700 text-slate-300 text-sm leading-relaxed font-sans hidden">
+                                <div class="text-xs text-slate-500 tracking-widest mb-1">📡 INTEL CLASIFICADO</div>
+                                <p id="quiz-explanation-text"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== VISTA: RESULTADO QUIZ ===== -->
+            <div id="view-quiz-result" class="view-section flex-col items-center justify-center flex-1" role="region" aria-label="Resultado del quiz">
+                <div id="result-card" class="bg-[#0a0a1a] border p-8 max-w-md w-full text-center relative overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)]">
+                    <div class="mb-5 inline-block relative">
+                        <div id="result-icon-container"></div>
+                        <div id="result-pulse-bg" class="absolute inset-0 rounded-full" style="animation: pulse-ring 2s ease-in-out infinite"></div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-1 tracking-widest uppercase" style="font-family:'Orbitron',monospace">Secuencia Completada</h2>
+                    <p id="result-world-name" class="text-slate-500 mb-6 font-sans text-sm"></p>
+
+                    <!-- Puntuación -->
+                    <div class="bg-black border border-slate-800 p-5 mb-4 relative">
+                        <p class="text-xs text-slate-600 tracking-widest mb-1">EXPERIENCIA OBTENIDA</p>
+                        <p class="text-4xl font-black text-white flex justify-center items-center gap-2">
+                            +<span id="result-score">0</span>
+                            <span class="text-base text-yellow-500 tracking-normal">EXP</span>
+                        </p>
+                    </div>
+
+                    <!-- Accuracy -->
+                    <div class="bg-black border border-slate-800 p-4 mb-6">
+                        <div class="flex justify-between text-xs text-slate-500 tracking-wider mb-2">
+                            <span>PRECISIÓN</span>
+                            <span id="result-accuracy">0%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-900">
+                            <div id="result-accuracy-bar" class="h-full bg-emerald-500 transition-all duration-700" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Logro desbloqueado (si aplica) -->
+                    <div id="result-achievement" class="hidden bg-yellow-950/30 border border-yellow-500/50 p-3 mb-4 text-left">
+                        <div class="text-yellow-500 text-xs tracking-widest mb-1">✦ LOGRO DESBLOQUEADO</div>
+                        <div id="result-achievement-name" class="text-white text-sm font-bold"></div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex flex-col gap-2">
+                        <button id="btn-finish-world" onclick="window.handleFinishWorld()"
+                            class="w-full btn-retro py-3.5 font-bold border hover:text-black text-sm" aria-label="Guardar progreso y volver al mapa">
+                            GUARDAR Y RETORNAR AL MAPA
+                        </button>
+                        <button id="btn-retry-world" onclick="window.handleRetryWorld()"
+                            class="w-full btn-retro py-3 font-bold border border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white text-sm" aria-label="Reintentar este sector">
+                            <i class="ph-bold ph-arrow-clockwise mr-2" aria-hidden="true"></i>REINTENTAR SECTOR
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== VISTA: PERFIL ===== -->
+            <div id="view-profile" class="view-section flex-col w-full max-w-4xl mx-auto py-6" role="region" aria-label="Perfil del agente">
+                <div class="mb-6 border-l-4 border-cyan-500 pl-4">
+                    <h2 class="text-2xl font-bold text-white tracking-widest uppercase" style="font-family:'Orbitron',monospace">
+                        <i class="ph-fill ph-user-circle text-cyan-500 mr-2" aria-hidden="true"></i>Perfil del Agente
+                    </h2>
+                </div>
+                <div id="profile-content" class="grid sm:grid-cols-2 gap-5"></div>
+            </div>
+
+            <!-- ===== VISTA: RANKING ===== -->
+            <div id="view-ranking" class="view-section flex-col w-full max-w-4xl mx-auto py-6" role="region" aria-label="Ranking global de agentes">
+                <div class="mb-6 border-l-4 border-yellow-500 pl-4">
+                    <h2 class="text-2xl font-bold text-white tracking-widest uppercase flex items-center gap-2" style="font-family:'Orbitron',monospace">
+                        <i class="ph-fill ph-trophy text-yellow-500" aria-hidden="true"></i> Registro de Agentes
+                    </h2>
+                    <p class="text-yellow-700 text-xs tracking-widest mt-1">CLASIFICACIÓN GLOBAL EN TIEMPO REAL</p>
+                </div>
+                <div class="bg-[#050508] border border-slate-800 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-[repeating-linear-gradient(transparent,transparent_3px,rgba(0,0,0,0.15)_3px,rgba(0,0,0,0.15)_4px)] pointer-events-none z-10" aria-hidden="true"></div>
+                    <div class="overflow-x-auto relative z-20">
+                        <table class="w-full text-left border-collapse" role="table" aria-label="Tabla de ranking de agentes">
+                            <thead>
+                                <tr class="border-b border-slate-700 text-xs tracking-widest text-slate-600 bg-[#0a0a1a]">
+                                    <th class="p-3 w-14 text-center" scope="col">POS</th>
+                                    <th class="p-3" scope="col">IDENTIFICADOR</th>
+                                    <th class="p-3 text-center hidden sm:table-cell" scope="col">ZONAS</th>
+                                    <th class="p-3 text-right" scope="col">EXP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ranking-tbody" class="divide-y divide-slate-800/40 font-sans"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== VISTA: CRÉDITOS ===== -->
+            <div id="view-credits" class="view-section flex-col items-center justify-center flex-1 py-8" role="region" aria-label="Información del sistema">
+                <div class="bg-[#050508] border border-slate-700/50 p-2 max-w-lg w-full">
+                    <div class="border border-slate-800 p-7 text-center bg-[#0a0a1a]">
+                        <i class="ph-fill ph-terminal-window text-4xl text-slate-600 mx-auto mb-5 block" aria-hidden="true"></i>
+                        <h2 class="text-xl font-bold text-white mb-6 tracking-widest uppercase border-b border-slate-800 pb-4" style="font-family:'Orbitron',monospace">Archivos del Sistema</h2>
+                        <div class="space-y-4 text-left font-sans">
+                            <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                                <span class="text-xs font-bold text-cyan-700 tracking-widest">01. DESARROLLO</span>
+                                <span class="text-slate-300 text-sm">Jóvenes de cara, corazón y alma</span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                                <span class="text-xs font-bold text-cyan-700 tracking-widest">02. PROGRAMA</span>
+                                <span class="text-slate-300 text-sm">Licenciatura / Ingeniería</span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                                <span class="text-xs font-bold text-cyan-700 tracking-widest">03. MATERIA</span>
+                                <span class="text-slate-300 text-sm">Tecnología Educativa</span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                                <span class="text-xs font-bold text-cyan-700 tracking-widest">04. ESTÉTICA</span>
+                                <span class="text-fuchsia-500 text-sm italic">Cybervania · Retro-SciFi Protocol</span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                                <span class="text-xs font-bold text-cyan-700 tracking-widest">05. VERSIÓN</span>
+                                <span class="text-cyan-400 text-sm">v2.0 — The Arsenal</span>
+                            </div>
+                            <div class="flex justify-between items-end pt-2">
+                                <span class="text-xs text-slate-700 tracking-widest">SYS.DATE: 2026</span>
+                                <span class="text-xs text-slate-700 tracking-widest">STATUS: ONLINE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- CHATBOT JOTFORM -->
+        <script src='https://cdn.jotfor.ms/agent/embedjs/019e4cd5f4be72bc92422a6f40be08601ce0/embed.js?autoOpenChatIn=0'></script>
 
     </div>
 
-    <script>
-        // --- GAME DATA ---
-        
-        const SKILLS_DB = {
-            "overclock": { name: "OVERCLOCK", desc: "Aumenta tu HP máximo. Desbloquea nodos de procesamiento avanzado.", icon: "⚡" },
-            "packet_sniffer": { name: "PACKET SNIFFER", desc: "Permite ver el protocolo de red. Desbloquea acceso a los túneles TCP/IP.", icon: "📡" },
-            "firewall_bypass": { name: "FIREWALL BYPASS", desc: "Rompe las barreras de seguridad. Acceso a la Ciudadela de Enrutamiento.", icon: "🛡️" }
+    <!-- ============================= -->
+    <!-- LÓGICA DE LA APLICACIÓN v2.0 -->
+    <!-- ============================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =============================================
+        // CONFIG FIREBASE Y MANEJO DE MODO LOCAL
+        // =============================================
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'redquest-v2';
+        let app, auth, db;
+        let isLocalMode = false;
+
+        try {
+            // Intenta leer la configuración inyectada si existe
+            const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+            let firebaseConfig = {};
+            
+            if (configStr) {
+                firebaseConfig = typeof configStr === 'string' ? JSON.parse(configStr) : configStr;
+            }
+            
+            // Si la configuración está vacía, forzamos un error para entrar en modo local
+            if (Object.keys(firebaseConfig).length === 0) {
+                throw new Error("No se detectó configuración de Firebase.");
+            }
+            
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (error) {
+            console.warn("⚠️ Iniciando en MODO LOCAL (Offline/Sin Base de Datos):", error.message);
+            isLocalMode = true; // Activa el almacenamiento en localStorage
+        }
+
+        // =============================================
+        // BANCO DE DATOS DEL JUEGO
+        // =============================================
+        const WORLDS = {
+            world1: {
+                id:'world1', title:'Sector Alpha: Hardware',
+                description:'La base de todo. Identifica las piezas físicas que dan vida a la máquina.',
+                iconClass:'ph-cpu', theme:'cyan', colorHex:'#22d3ee',
+                unlockRequires: [],
+                colorClasses:'text-cyan-400 border-cyan-500/50 bg-cyan-950/15 hover:shadow-[0_0_25px_rgba(34,211,238,0.5)]',
+                questions:[
+                    { q:'¿Cuál es considerado el "Cerebro" responsable de procesar las instrucciones?', options:['Unidad de Disco','Memoria RAM','CPU (Unidad Central de Proceso)','Tarjeta Gráfica (GPU)'], correct:2, explanation:'La CPU (Central Processing Unit) ejecuta las instrucciones de los programas. Contiene la ALU (Unidad Aritmético-Lógica) y la CU (Unidad de Control). Sin ella, ningún programa puede correr.' },
+                    { q:'Memoria volátil que almacena datos temporalmente y se borra al apagar el sistema:', options:['Memoria RAM','SSD (Disco de Estado Sólido)','Memoria ROM','Caché L3'], correct:0, explanation:'La RAM (Random Access Memory) es volátil: pierde todos sus datos al cortar la alimentación. Es mucho más rápida que el SSD pero más costosa por GB. Actualmente los PCs usan DDR4 o DDR5.' },
+                    { q:'El circuito principal donde se conectan todos los componentes del sistema es:', options:['Fuente de Poder','Placa Base (Motherboard)','Bus de Datos','Puerto PCI-Express'], correct:1, explanation:'La Motherboard es el esqueleto del sistema. Contiene los slots para CPU, RAM, expansiones (PCIe), conectores SATA, y el BIOS/UEFI. Todos los componentes se comunican a través de sus buses.' },
+                    { q:'Transforma la corriente alterna del enchufe en corriente continua para la PC:', options:['Disipador','Transformador externo','Batería CMOS','Fuente de Alimentación (PSU)'], correct:3, explanation:'La PSU convierte los 110/220V AC de la pared en 12V, 5V y 3.3V DC que usan los componentes. La certificación 80 PLUS indica su eficiencia energética. Una PSU de calidad protege contra sobretensiones.' },
+                    { q:'¿Qué es el factor de forma ATX en una computadora?', options:['El tipo de conector del monitor','El estándar de tamaño y disposición de la placa base','La velocidad del procesador','Un tipo de memoria RAM'], correct:1, explanation:'ATX (Advanced Technology eXtended) es el estándar de Microsoft de 1995 que define las dimensiones de la placa base, la disposición de conectores y la interfaz con la fuente de poder. Hay variantes: Micro-ATX, Mini-ITX para casos más pequeños.' },
+                ]
+            },
+            world2: {
+                id:'world2', title:'Nexo Beta: Redes',
+                description:'Los hilos invisibles. Comprende cómo fluyen los datos a través del mundo.',
+                iconClass:'ph-globe', theme:'emerald', colorHex:'#34d399',
+                unlockRequires: [],
+                colorClasses:'text-emerald-400 border-emerald-500/50 bg-emerald-950/15 hover:shadow-[0_0_25px_rgba(52,211,153,0.5)]',
+                questions:[
+                    { q:'Dispositivo que enruta paquetes de datos entre diferentes redes informáticas:', options:['Switch','Router','Hub','Modem'], correct:1, explanation:'El Router opera en Capa 3 (Red) del modelo OSI y dirige paquetes entre redes distintas usando direcciones IP. El Switch opera en Capa 2 y conecta dispositivos dentro de la misma red usando MACs.' },
+                    { q:'Protocolo estándar para transferir páginas web con cifrado:', options:['FTP','SMTP','HTTPS','UDP'], correct:2, explanation:'HTTPS (HTTP Secure) usa TLS/SSL para cifrar la comunicación. El candado en el navegador indica un certificado válido. HTTP plano es inseguro porque cualquier intermediario puede leer el tráfico.' },
+                    { q:'Una dirección IP versión 4 (IPv4) se compone de:', options:['4 números de 0-255 separados por puntos','6 pares de caracteres hexadecimales','Una URL como www.google.com','16 números hexadecimales'], correct:0, explanation:'IPv4 usa 32 bits divididos en 4 octetos (p.ej. 192.168.1.1). Solo hay ~4.3 mil millones de direcciones posibles, agotadas en 2019. IPv6 usa 128 bits para solucionar esto: 2001:0db8:85a3::8a2e:0370:7334.' },
+                    { q:'Topología de red donde todos los nodos están conectados a un nodo central:', options:['Anillo','Malla','Estrella','Bus'], correct:2, explanation:'La topología Estrella es la más común en redes locales modernas. El nodo central (switch) gestiona todo el tráfico. Ventaja: un cable roto solo afecta ese nodo. Desventaja: el switch es un punto único de falla.' },
+                    { q:'¿Qué capa del modelo OSI se encarga del direccionamiento lógico (IP)?', options:['Capa 1: Física','Capa 2: Enlace de Datos','Capa 3: Red','Capa 4: Transporte'], correct:2, explanation:'La Capa 3 (Red) usa direcciones lógicas (IP) para enrutar paquetes entre redes. La Capa 2 usa MACs para comunicación dentro de una misma red. Los routers operan en Capa 3; los switches en Capa 2.' },
+                ]
+            },
+            world3: {
+                id:'world3', title:'Cripta Gamma: Software',
+                description:'El alma de la máquina. Sistemas operativos, aplicaciones y código.',
+                iconClass:'ph-terminal-window', theme:'fuchsia', colorHex:'#e879f9',
+                unlockRequires: ['world1'],
+                colorClasses:'text-fuchsia-400 border-fuchsia-500/50 bg-fuchsia-950/15 hover:shadow-[0_0_25px_rgba(232,121,249,0.5)]',
+                questions:[
+                    { q:'Programa principal que gestiona los recursos del hardware y provee servicios a otros programas:', options:['Navegador Web','Antivirus','Sistema Operativo','BIOS/UEFI'], correct:2, explanation:'El SO (Windows, Linux, macOS) es el intermediario entre hardware y aplicaciones. Gestiona memoria, procesos, sistema de archivos y dispositivos. El kernel es su núcleo más privilegiado.' },
+                    { q:'Software cuyo código fuente está disponible públicamente para ser modificado y distribuido:', options:['Freeware','Open Source (Código Abierto)','Shareware','Firmware'], correct:1, explanation:'Open Source no significa gratis: significa que puedes ver, modificar y distribuir el código según su licencia (GPL, MIT, Apache). Linux, Android, Firefox y LibreOffice son open source. Freeware es gratuito pero el código es privado.' },
+                    { q:'¿Qué es un algoritmo?', options:['Una pieza de hardware especializada','Un error en el código fuente','Un conjunto de pasos lógicos ordenados para resolver un problema','Un tipo de virus avanzado'], correct:2, explanation:'Un algoritmo es una secuencia finita, precisa y efectiva de instrucciones. Ejemplos: búsqueda binaria, ordenamiento de burbuja, Dijkstra. La eficiencia se mide en complejidad temporal O(n).' },
+                    { q:'¿Cuál es la principal diferencia entre compilación e interpretación?', options:['El compilado es más lento que el interpretado','El compilador traduce todo el código antes de ejecutar; el intérprete lo hace línea a línea','Son procesos idénticos','El intérprete produce ejecutables .exe'], correct:1, explanation:'Compiladores (C, C++, Rust) traducen todo el código a lenguaje máquina de una vez, produciendo un ejecutable rápido. Intérpretes (Python, JavaScript) ejecutan línea a línea, más lentos pero más flexibles para depurar.' },
+                    { q:'¿Qué gestiona un "sistema de archivos" en un SO?', options:['La velocidad del procesador','La forma en que los datos son almacenados y organizados en disco','El uso de la memoria RAM','Las conexiones de red'], correct:1, explanation:'Los sistemas de archivos (NTFS, ext4, APFS, FAT32) definen cómo organizar, nombrar y acceder a los datos en disco. NTFS soporta permisos, journaling y archivos grandes. FAT32 tiene límite de 4GB por archivo.' },
+                ]
+            },
+            world4: {
+                id:'world4', title:'Fortaleza Delta: Ciberseguridad',
+                description:'Peligros en la red. Defiende tu sistema contra intrusiones y malware.',
+                iconClass:'ph-shield-warning', theme:'rose', colorHex:'#fb7185',
+                unlockRequires: ['world2'],
+                colorClasses:'text-rose-400 border-rose-500/50 bg-rose-950/15 hover:shadow-[0_0_25px_rgba(251,113,133,0.5)]',
+                questions:[
+                    { q:'Técnica de ingeniería social que busca robar información haciéndose pasar por entidad de confianza:', options:['Ransomware','Phishing','DDoS','Spyware'], correct:1, explanation:'El Phishing usa emails, SMS (smishing) o llamadas (vishing) falsos que imitan a bancos, Google o tu jefe. Signos de alerta: urgencia, remitente raro, enlace que no coincide con el dominio real. El 90% de brechas comienza así.' },
+                    { q:'Malware que cifra los datos del usuario y exige pago para liberarlos:', options:['Caballo de Troya','Gusano de red','Adware','Ransomware'], correct:3, explanation:'El Ransomware cifra tus archivos con criptografía asimétrica y pide crypto (Bitcoin, Monero) para la clave. WannaCry (2017) afectó 200,000 sistemas. Prevención: backups offline, no click en adjuntos, updates al día.' },
+                    { q:'Sistema que monitorea y controla el tráfico de red basado en reglas de seguridad:', options:['VPN','Firewall (Cortafuegos)','Proxy inverso','Router NAT'], correct:1, explanation:'El Firewall inspecciona paquetes y aplica reglas (permitir/bloquear por IP, puerto, protocolo). Los NGFW (Next-Gen) añaden inspección profunda de paquetes (DPI) y detección de intrusiones (IDS/IPS).' },
+                    { q:'¿Qué característica hace más segura una contraseña?', options:['Usar tu fecha de nacimiento','Ser corta y fácil de recordar','Combinar mayúsculas, minúsculas, números y símbolos','Usar la misma en todas las cuentas'], correct:2, explanation:'Una contraseña fuerte tiene 12+ caracteres con variedad de tipos. Mejor aún: usa un gestor de contraseñas (Bitwarden, 1Password) para generar y recordar contraseñas únicas de 20+ caracteres para cada sitio.' },
+                    { q:'¿Qué es la autenticación de dos factores (2FA)?', options:['Tener dos contraseñas distintas','Verificar identidad con algo que sabes + algo que tienes','Usar el mismo password dos veces','Cambiar password cada dos semanas'], correct:1, explanation:'2FA combina algo que sabes (contraseña) con algo que tienes (código OTP, llave física FIDO2) o algo que eres (biometría). Incluso si roban tu contraseña, no pueden entrar sin el segundo factor. TOTP (Google Authenticator) es más seguro que SMS.' },
+                ]
+            },
+            world5: {
+                id:'world5', title:'El Núcleo Central',
+                description:'Prueba final de élite. Demuestra dominio absoluto sobre todos los sistemas.',
+                iconClass:'ph-skull', theme:'amber', colorHex:'#fbbf24',
+                unlockRequires: ['world1','world2','world3','world4'],
+                colorClasses:'text-amber-400 border-amber-500/50 bg-amber-950/15 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]',
+                questions:[
+                    { q:'Tu PC enciende, hace beeps constantes pero no da video. ¿Causa más probable?', options:['Falla del disco duro','Error en el sistema operativo','Problema con RAM o Tarjeta de Video','Falta de conexión a internet'], correct:2, explanation:'Los beeps del BIOS (POST codes) son diagnósticos de hardware. Múltiples beeps suelen indicar falla de RAM (más común) o GPU. Prueba: quitar y reincorporar el módulo de RAM, limpiar los contactos. Si hay GPU dedicada, intenta la gráfica integrada.' },
+                    { q:'Comando para comprobar conectividad y latencia con otra dirección IP:', options:['ipconfig','ping','tracert','netstat'], correct:1, explanation:'ping envía paquetes ICMP Echo Request y mide el tiempo de respuesta (RTT en ms). tracert muestra cada salto (router) en la ruta. ipconfig/ifconfig muestra tu configuración de red local. netstat muestra conexiones activas.' },
+                    { q:'Cifrado de extremo a extremo (E2EE) garantiza que:', options:['El mensaje va por cable directo','Solo emisor y receptor pueden leer el mensaje','El servidor puede leer pero no vender los datos','Es encriptación de doble capa'], correct:1, explanation:'En E2EE (Signal, WhatsApp), las claves solo existen en los dispositivos de los usuarios. Ni el servidor puede descifrar los mensajes. Se basa en criptografía de clave pública (RSA, Curve25519). Sin E2EE, el proveedor puede leer todo.' },
+                    { q:'¿Qué es el principio de "menor privilegio" en seguridad?', options:['Dar acceso mínimo necesario para cumplir una tarea','Usar contraseñas más cortas','Reducir el número de usuarios en el sistema','Deshabilitar el firewall para simplificar'], correct:0, explanation:'Least Privilege dicta que cada usuario/proceso solo debe tener los permisos estrictamente necesarios. Limita el daño si una cuenta es comprometida. Aplicado en SO (sudo vs root), bases de datos, microservicios y APIs.' },
+                ]
+            }
         };
 
-        const MAP_NODES = [
-            // HARDWARE TIER 1
-            { id: "node_ram", x: 20, y: 50, name: "Planicie de Memoria Volátil (RAM)", req: [], skillReward: null, type: "quiz" },
-            { id: "node_storage", x: 35, y: 70, name: "Bóvedas de Almacenamiento (HDD/SSD)", req: ["node_ram"], skillReward: null, type: "quiz" },
-            { id: "node_cpu", x: 35, y: 30, name: "Torre de Control Central (CPU Boss)", req: ["node_ram", "node_storage"], skillReward: "overclock", type: "boss" },
-            
-            // NETWORKING TIER 1 (Requires Overclock to process)
-            { id: "node_nic", x: 55, y: 50, name: "Puerto de Interfaz (NIC)", req: ["node_cpu"], reqSkill: "overclock", skillReward: null, type: "quiz" },
-            { id: "node_osi", x: 70, y: 30, name: "Las 7 Capas del Abismo (Modelo OSI)", req: ["node_nic"], skillReward: "packet_sniffer", type: "boss" },
-            
-            // NETWORKING TIER 2 (Requires Packet Sniffer)
-            { id: "node_ip", x: 70, y: 70, name: "Cañón de Direccionamiento (IPv4/IPv6)", req: ["node_nic"], reqSkill: "packet_sniffer", skillReward: null, type: "quiz" },
-            { id: "node_router", x: 90, y: 50, name: "El Nexo del Enrutador (Boss Final)", req: ["node_osi", "node_ip"], skillReward: "firewall_bypass", type: "boss" }
-        ];
-
-        // Line connections for visual map
-        const MAP_EDGES = [
-            ["node_ram", "node_storage"],
-            ["node_ram", "node_cpu"],
-            ["node_storage", "node_cpu"],
-            ["node_cpu", "node_nic"],
-            ["node_nic", "node_osi"],
-            ["node_nic", "node_ip"],
-            ["node_osi", "node_router"],
-            ["node_ip", "node_router"]
-        ];
-
-        const QUESTION_POOL = {
-            "node_ram": [
-                { q: "Encuentras módulos de datos que desaparecen al cortar la energía. ¿Qué tipo de memoria es?", opts: ["ROM", "RAM", "Disco Duro", "Memoria Caché"], a: 1 },
-                { q: "¿Cuál es la función principal de la memoria RAM en el sistema?", opts: ["Almacenar archivos permanentemente", "Procesar gráficos 3D", "Almacenar datos e instrucciones temporales para acceso rápido de la CPU", "Enfriar la placa base"], a: 2 },
-                { q: "La velocidad de esta memoria se mide frecuentemente en...", opts: ["Megabytes (MB)", "Megahertz (MHz) o Gigatransfers (MT/s)", "Revoluciones por minuto (RPM)", "Vatios (W)"], a: 1 }
-            ],
-            "node_storage": [
-                { q: "Este dispositivo utiliza memoria flash NAND para almacenar datos sin partes móviles. ¿Qué es?", opts: ["HDD", "SSD", "Unidad de cinta", "RAM"], a: 1 },
-                { q: "¿Qué tecnología de almacenamiento es tradicionalmente más rápida para leer/escribir?", opts: ["Disco Duro Mecánico (HDD)", "Unidad de Estado Sólido (SSD)", "CD-ROM", "Disquete"], a: 1 },
-                { q: "¿Qué significa el acrónimo HDD?", opts: ["Hard Disk Drive", "Heavy Data Device", "Hyper Disk Display", "Hardware Data Drive"], a: 0 }
-            ],
-            "node_cpu": [
-                { q: "[JEFE CPU] SOY EL CEREBRO. ¿Cuál es mi función principal?", opts: ["Renderizar video", "Almacenar fotos", "Ejecutar instrucciones y procesar datos", "Conectar a internet"], a: 2 },
-                { q: "[JEFE CPU] Mi velocidad de reloj determina mis ciclos. ¿En qué unidad se mide?", opts: ["Gigahercios (GHz)", "Gigabytes (GB)", "Milivoltios (mV)", "Megabits (Mbps)"], a: 0 },
-                { q: "[JEFE CPU] Para no sobrecalentarme, dependo de un componente. ¿Cuál?", opts: ["Fuente de poder", "Disipador de calor térmico y ventilador", "Tarjeta de red", "Cable SATA"], a: 1 },
-                { q: "[JEFE CPU] Contengo núcleos e hilos. ¿Qué permiten los múltiples núcleos?", opts: ["Mejorar la conexión WiFi", "Aumentar el espacio del disco", "Procesamiento paralelo de múltiples tareas", "Reducir el consumo de energía a 0"], a: 2 }
-            ],
-            "node_nic": [
-                { q: "¿Qué componente físico permite a un dispositivo conectarse a una red?", opts: ["CPU", "GPU", "NIC (Tarjeta de Interfaz de Red)", "SSD"], a: 2 },
-                { q: "La dirección física única grabada en la NIC desde fábrica se llama...", opts: ["Dirección IP", "Dirección MAC", "Máscara de subred", "Puerta de enlace"], a: 1 },
-                { q: "¿Qué tipo de cable se utiliza comúnmente para conectar la NIC a un switch Ethernet?", opts: ["Cable coaxial", "Cable HDMI", "Par trenzado (Ej. Cat6, con conector RJ-45)", "Cable USB"], a: 2 }
-            ],
-            "node_osi": [
-                { q: "[JEFE OSI] Soy un modelo teórico. ¿Cuántas capas tengo?", opts: ["4", "5", "7", "9"], a: 2 },
-                { q: "[JEFE OSI] Mi Capa 3 se encarga del enrutamiento. ¿Cómo se llama?", opts: ["Capa de Enlace de Datos", "Capa de Red", "Capa de Transporte", "Capa de Aplicación"], a: 1 },
-                { q: "[JEFE OSI] Mi Capa 1 define voltajes, cables y pines. Es la capa...", opts: ["Física", "Lógica", "Mágica", "De Presentación"], a: 0 },
-                { q: "[JEFE OSI] El protocolo TCP opera en mi Capa 4, garantizando entrega. ¿Cómo se llama esta capa?", opts: ["Sesión", "Transporte", "Red", "Enlace"], a: 1 }
-            ],
-            "node_ip": [
-                { q: "¿Cuál de estas es una dirección IPv4 válida?", opts: ["192.168.1.256", "10.0.0.1", "2001:0db8::ff00:42:8329", "192.168.1.-1"], a: 1 },
-                { q: "IPv6 se introdujo principalmente porque...", opts: ["Es más fácil de memorizar", "Se agotaron las direcciones IPv4 públicas", "Es un requisito para el WiFi", "Hace que la PC sea más rápida"], a: 1 },
-                { q: "¿Qué servicio traduce nombres amigables (como google.com) a direcciones IP?", opts: ["DHCP", "FTP", "DNS", "HTTP"], a: 2 }
-            ],
-            "node_router": [
-                { q: "[NEXO FINAL] Yo conecto diferentes redes entre sí y determino la mejor ruta. ¿Quién soy?", opts: ["Switch", "Hub", "Router", "Access Point"], a: 2 },
-                { q: "[NEXO FINAL] A diferencia de un switch de capa 2 que usa MACs, yo tomo decisiones basadas en...", opts: ["Direcciones IP", "Nombres de PC", "Puertos USB", "Fabricante de la tarjeta"], a: 0 },
-                { q: "[NEXO FINAL] Si tu PC no sabe cómo llegar a una red externa, envía el paquete a tu Router. Esto se conoce como...", opts: ["Broadcast", "Default Gateway (Puerta de enlace predeterminada)", "Ping", "Máscara de subred"], a: 1 },
-                { q: "[NEXO FINAL] Un cortafuegos (Firewall) dentro de mí bloquea tráfico no deseado usando reglas llamadas...", opts: ["ACL (Listas de Control de Acceso)", "DNS", "MAC Tables", "VLANs"], a: 0 },
-                { q: "[NEXO FINAL] Al restaurarme, has reparado el protocolo. ¿Qué comando usas para verificar conectividad conmigo?", opts: ["format c:", "ping", "ipconfig /release", "shutdown"], a: 1 }
-            ]
+        // Logros disponibles
+        const ACHIEVEMENTS = {
+            first_blood: { id:'first_blood', name:'Primer Hack', desc:'Completa tu primer sector', icon:'ph-lightning', condition: (p) => p.worldsCompleted.length >= 1 },
+            perfect_run: { id:'perfect_run', name:'Ejecución Perfecta', desc:'Responde todo correctamente en un sector', icon:'ph-star', condition: (p,quiz) => quiz && quiz.perfect },
+            streak_5: { id:'streak_5', name:'Cadena Táctica', desc:'5 respuestas correctas seguidas', icon:'ph-fire', condition: (p,quiz) => quiz && quiz.maxStreak >= 5 },
+            all_sectors: { id:'all_sectors', name:'Dominio Total', desc:'Completa los 5 sectores', icon:'ph-skull', condition: (p) => p.worldsCompleted.length >= 5 },
+            speed_demon: { id:'speed_demon', name:'Velocista Cibernético', desc:'Responde en menos de 5s tres veces seguidas', icon:'ph-clock-countdown', condition: (p,quiz) => quiz && quiz.speedStreak >= 3 },
+            veteran: { id:'veteran', name:'Veterano', desc:'Completa 3 sectores distintos', icon:'ph-shield-check', condition: (p) => p.worldsCompleted.length >= 3 },
         };
 
-        const Game = (function() {
-            // STATE
-            let state = {
-                level: 1,
-                xp: 0,
-                hp: 100,
-                maxHp: 100,
-                unlockedSkills: [],
-                clearedNodes: [],
-                currentNodeId: null,
-                combatState: {
-                    questionsLeft: [],
-                    currentQuestion: null,
-                    enemyMaxHp: 100,
-                    enemyHp: 100,
-                    typewriterInterval: null
-                }
-            };
-
-            // DOM Elements
-            const els = {
-                hud: document.getElementById('hud'),
-                hudLevel: document.getElementById('hud-level'),
-                hudHp: document.getElementById('hud-hp'),
-                hudXp: document.getElementById('hud-xp'),
-                views: {
-                    intro: document.getElementById('view-intro'),
-                    map: document.getElementById('view-map'),
-                    combat: document.getElementById('view-combat'),
-                    skills: document.getElementById('view-skills')
-                },
-                mapContainer: document.getElementById('map-container'),
-                dialog: document.getElementById('system-dialog'),
-                dialogTitle: document.getElementById('dialog-title'),
-                dialogMsg: document.getElementById('dialog-message'),
-                terminalOutput: document.getElementById('terminal-output'),
-                combatOptions: document.getElementById('combat-options'),
-                enemyHp: document.getElementById('enemy-hp'),
-                enemyName: document.getElementById('enemy-name'),
-                sectorName: document.getElementById('combat-sector-name'),
-                skillsContainer: document.getElementById('skills-container')
-            };
-
-            function init() {
-                renderMap();
-                renderSkills();
+        // =============================================
+        // ESTADO GLOBAL
+        // =============================================
+        let state = {
+            user: null,
+            playerProfile: null,
+            rankingData: [],
+            currentView: 'home',
+            quiz: {
+                worldId: null, currentQIndex: 0, score: 0,
+                selectedAnswer: null, isCorrect: null,
+                streak: 0, maxStreak: 0,
+                timeLeft: 30, timerId: null,
+                perfect: true, speedStreak: 0,
+                answeredAt: [],
             }
+        };
 
-            function start() {
-                switchView('map');
-                els.hud.classList.remove('hide');
-                playSound('start');
-                showDialog("SISTEMA INICIADO", "Bienvenido, Explorador. Selecciona un nodo brillante en el mapa para comenzar la depuración del sistema.");
-            }
+        // =============================================
+        // AUDIO (Web Audio API)
+        // =============================================
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
 
-            function switchView(viewName) {
-                Object.values(els.views).forEach(el => el.classList.add('hide'));
-                els.views[viewName].classList.remove('hide');
-                if(viewName === 'map') updateMapVisuals();
-                if(viewName === 'skills') renderSkills();
-            }
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            return audioCtx;
+        }
 
-            function updateHUD() {
-                els.hudLevel.innerText = state.level.toString().padStart(2, '0');
-                els.hudHp.style.width = `${(state.hp / state.maxHp) * 100}%`;
-                
-                // XP required for next level formula: level * 100
-                const nextLevelXp = state.level * 100;
-                let currentLevelXp = state.xp;
-                
-                // Calculate remainder for progress bar
-                let base_xp_for_current_level = 0;
-                for(let i = 1; i < state.level; i++) base_xp_for_current_level += (i*100);
-                
-                let relativeXp = state.xp - base_xp_for_current_level;
-                let percent = (relativeXp / nextLevelXp) * 100;
-                if(percent > 100) percent = 100; // should level up before this happens
-                els.hudXp.style.width = `${percent}%`;
-            }
-
-            function addXp(amount) {
-                state.xp += amount;
-                let nextLevelXp = 0;
-                for(let i = 1; i <= state.level; i++) nextLevelXp += (i*100);
-                
-                if(state.xp >= nextLevelXp) {
-                    state.level++;
-                    state.maxHp += 20;
-                    state.hp = state.maxHp;
-                    showDialog("¡NIVEL AUMENTADO!", `Has alcanzado el Nivel Lógico ${state.level}. Integridad máxima incrementada.`);
-                }
-                updateHUD();
-            }
-
-            function takeDamage(amount) {
-                state.hp -= amount;
-                document.getElementById('game-container').classList.add('damage-flash');
-                setTimeout(() => document.getElementById('game-container').classList.remove('damage-flash'), 300);
-                playSound('error');
-                
-                if(state.hp <= 0) {
-                    state.hp = state.maxHp; // Reset
-                    showDialog("SISTEMA CRÍTICO", "Integridad al 0%. Desconexión forzada. Volviendo al mapa de red.");
-                    switchView('map');
-                }
-                updateHUD();
-            }
-
-            function showDialog(title, message) {
-                els.dialogTitle.innerText = title;
-                els.dialogMsg.innerText = message;
-                els.dialog.classList.remove('hide');
-            }
-            
-            function closeDialog() {
-                els.dialog.classList.add('hide');
-            }
-
-            function renderMap() {
-                els.mapContainer.innerHTML = '';
-                
-                // Draw edges first so they are behind nodes
-                MAP_EDGES.forEach(edge => {
-                    const n1 = MAP_NODES.find(n => n.id === edge[0]);
-                    const n2 = MAP_NODES.find(n => n.id === edge[1]);
-                    
-                    const dx = n2.x - n1.x;
-                    const dy = n2.y - n1.y;
-                    const length = Math.sqrt(dx*dx + dy*dy);
-                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-                    const line = document.createElement('div');
-                    line.className = 'map-line';
-                    line.id = `line-${n1.id}-${n2.id}`;
-                    line.style.width = `${length}%`; // Using percentage since container is responsive relative coordinates
-                    line.style.left = `${n1.x}%`;
-                    line.style.top = `${n1.y}%`;
-                    line.style.transform = `rotate(${angle}deg)`;
-                    
-                    els.mapContainer.appendChild(line);
-                });
-
-                // Draw Nodes
-                MAP_NODES.forEach(node => {
-                    const el = document.createElement('div');
-                    el.className = 'map-node locked';
-                    el.id = `ui-${node.id}`;
-                    el.style.left = `${node.x}%`;
-                    el.style.top = `${node.y}%`;
-                    
-                    // Icon based on type
-                    el.innerHTML = node.type === 'boss' ? '<span class="text-xl">💀</span>' : '<span class="text-xl">💾</span>';
-                    
-                    el.onclick = () => tryEnterNode(node);
-                    els.mapContainer.appendChild(el);
-                    
-                    // Label
-                    const label = document.createElement('div');
-                    label.className = 'absolute text-[10px] text-gray-400 font-sans text-center w-24 pointer-events-none text-glow-blue';
-                    label.style.left = `calc(${node.x}% - 3rem)`;
-                    label.style.top = `calc(${node.y}% + 25px)`;
-                    label.innerText = node.name;
-                    els.mapContainer.appendChild(label);
-                });
-                
-                updateMapVisuals();
-            }
-
-            function updateMapVisuals() {
-                MAP_NODES.forEach(node => {
-                    const el = document.getElementById(`ui-${node.id}`);
-                    el.classList.remove('locked', 'available', 'cleared');
-                    
-                    // Check if requirements met
-                    let reqMet = node.req.every(reqId => state.clearedNodes.includes(reqId));
-                    let skillMet = !node.reqSkill || state.unlockedSkills.includes(node.reqSkill);
-
-                    if(state.clearedNodes.includes(node.id)) {
-                        el.classList.add('cleared');
-                    } else if (reqMet && skillMet) {
-                        el.classList.add('available');
-                    } else {
-                        el.classList.add('locked');
-                    }
-                });
-
-                MAP_EDGES.forEach(edge => {
-                    const line = document.getElementById(`line-${edge[0]}-${edge[1]}`);
-                    line.classList.remove('active', 'cleared');
-                    if(state.clearedNodes.includes(edge[0]) && state.clearedNodes.includes(edge[1])) {
-                        line.classList.add('cleared');
-                    } else if (state.clearedNodes.includes(edge[0]) || state.clearedNodes.includes(edge[1])) {
-                        line.classList.add('active');
-                    }
-                });
-            }
-
-            function tryEnterNode(node) {
-                if(state.clearedNodes.includes(node.id)) {
-                    showDialog("NODO RESTAURADO", "Este sector ya opera a capacidad óptima. No se requiere intervención.");
-                    return;
-                }
-                
-                let reqMet = node.req.every(reqId => state.clearedNodes.includes(reqId));
-                let skillMet = !node.reqSkill || state.unlockedSkills.includes(node.reqSkill);
-
-                if(!reqMet) {
-                    showDialog("ACCESO DENEGADO", "Ruta bloqueada. Debes restaurar los nodos adyacentes primero.");
-                    return;
-                }
-                if(!skillMet) {
-                    const reqSkillName = SKILLS_DB[node.reqSkill].name;
-                    showDialog("ACCESO DENEGADO", `Protocolo de seguridad activo. Se requiere la habilidad cognitiva [${reqSkillName}] para procesar estos datos.`);
-                    return;
-                }
-
-                startCombat(node);
-            }
-
-            function startCombat(node) {
-                state.currentNodeId = node.id;
-                
-                // Deep copy questions and shuffle slightly
-                state.combatState.questionsLeft = [...QUESTION_POOL[node.id]].sort(() => Math.random() - 0.5);
-                state.combatState.enemyMaxHp = state.combatState.questionsLeft.length * 10;
-                state.combatState.enemyHp = state.combatState.enemyMaxHp;
-                
-                els.sectorName.innerText = node.name.toUpperCase();
-                els.enemyName.innerText = node.type === 'boss' ? "AMENAZA MAYOR (JEFE)" : "CORRUPCIÓN MENOR";
-                if(node.type === 'boss') els.enemyName.classList.replace('text-red-400', 'text-red-500');
-                
-                updateCombatHUD();
-                switchView('combat');
-                
-                els.terminalOutput.innerHTML = `> Iniciando conexión con [${node.name}]...<br>> Obteniendo descriptores de datos...<br><br>`;
-                
-                setTimeout(nextQuestion, 1000);
-            }
-
-            function updateCombatHUD() {
-                els.enemyHp.style.width = `${(state.combatState.enemyHp / state.combatState.enemyMaxHp) * 100}%`;
-            }
-
-            function nextQuestion() {
-                els.combatOptions.innerHTML = ''; // clear buttons
-                
-                if(state.combatState.questionsLeft.length === 0) {
-                    winCombat();
-                    return;
-                }
-
-                state.combatState.currentQuestion = state.combatState.questionsLeft.pop();
-                typeWriterEffect(`> SISTEMA PREGUNTA: ${state.combatState.currentQuestion.q}`, () => {
-                    // Show options after typing finishes
-                    state.combatState.currentQuestion.opts.forEach((opt, index) => {
-                        const btn = document.createElement('button');
-                        btn.className = 'btn-retro w-full h-full text-left p-4 leading-snug';
-                        btn.innerText = `[${index + 1}] ${opt}`;
-                        btn.onclick = () => handleAnswer(index);
-                        els.combatOptions.appendChild(btn);
-                    });
-                });
-            }
-
-            function typeWriterEffect(text, callback) {
-                if(state.combatState.typewriterInterval) clearInterval(state.combatState.typewriterInterval);
-                
-                const p = document.createElement('div');
-                p.className = 'mb-4 text-green-400';
-                els.terminalOutput.appendChild(p);
-                
-                let i = 0;
-                playSound('typing');
-                state.combatState.typewriterInterval = setInterval(() => {
-                    p.innerHTML += text.charAt(i);
-                    els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
-                    i++;
-                    if(i >= text.length) {
-                        clearInterval(state.combatState.typewriterInterval);
-                        if(callback) callback();
-                    }
-                }, 20); // typing speed
-            }
-
-            function appendTerminalMsg(msg, colorClass = "text-blue-200") {
-                const p = document.createElement('div');
-                p.className = `mb-2 ${colorClass}`;
-                p.innerHTML = msg;
-                els.terminalOutput.appendChild(p);
-                els.terminalOutput.scrollTop = els.terminalOutput.scrollHeight;
-            }
-
-            function handleAnswer(selectedIndex) {
-                // Disable all buttons
-                Array.from(els.combatOptions.children).forEach(btn => btn.classList.add('disabled'));
-                
-                const q = state.combatState.currentQuestion;
-                
-                if(selectedIndex === q.a) {
-                    // Correct
-                    appendTerminalMsg("> RESPUESTA ACEPTADA. Daño infligido a la corrupción.", "text-green-400");
-                    state.combatState.enemyHp -= 10;
-                    updateCombatHUD();
-                    playSound('hit');
-                    els.views.combat.classList.add('glitch-effect');
-                    setTimeout(() => els.views.combat.classList.remove('glitch-effect'), 200);
-                    
-                    setTimeout(nextQuestion, 1500);
-                } else {
-                    // Incorrect
-                    appendTerminalMsg("> ERROR. DATOS INVÁLIDOS. Contramedida activada.", "text-red-500");
-                    takeDamage(15);
-                    
-                    if(state.hp > 0) {
-                        // Put question back at the beginning of array so they have to answer it again later
-                        state.combatState.questionsLeft.unshift(q);
-                        setTimeout(nextQuestion, 2000);
-                    }
-                }
-            }
-
-            function winCombat() {
-                const node = MAP_NODES.find(n => n.id === state.currentNodeId);
-                state.clearedNodes.push(node.id);
-                
-                appendTerminalMsg(`> NODO [${node.name}] RESTAURADO CON ÉXITO.`, "text-glow-green text-xl mt-4");
-                addXp(50);
-                
-                setTimeout(() => {
-                    if(node.skillReward && !state.unlockedSkills.includes(node.skillReward)) {
-                        state.unlockedSkills.push(node.skillReward);
-                        const skill = SKILLS_DB[node.skillReward];
-                        showDialog("NUEVA HABILIDAD ADQUIRIDA", `[${skill.icon} ${skill.name}]\n\n${skill.desc}`);
-                        
-                        if(node.skillReward === 'overclock') state.maxHp += 30; state.hp = state.maxHp; updateHUD();
-                    }
-                    
-                    if(node.id === "node_router") {
-                        showDialog("¡SISTEMA TOTALMENTE RESTAURADO!", "Felicidades, Explorador. Has derrotado al Nexo Final y reconstruido la topología de la red. Has demostrado dominio en Hardware y Redes de Computadores. Eres una leyenda digital.");
-                    }
-                    
-                    switchView('map');
-                }, 2000);
-            }
-
-            function renderSkills() {
-                els.skillsContainer.innerHTML = '';
-                
-                Object.keys(SKILLS_DB).forEach(key => {
-                    const skill = SKILLS_DB[key];
-                    const isUnlocked = state.unlockedSkills.includes(key);
-                    
-                    const el = document.createElement('div');
-                    el.className = `p-6 border-2 rounded flex flex-col items-center text-center transition-all ${isUnlocked ? 'border-neon-green bg-[#00ff6611] shadow-[0_0_15px_rgba(0,255,102,0.3)]' : 'border-gray-700 bg-gray-900 opacity-60'}`;
-                    
-                    el.innerHTML = `
-                        <div class="text-4xl mb-4 ${isUnlocked ? '' : 'grayscale'}">${skill.icon}</div>
-                        <h3 class="pixel-text text-sm mb-2 ${isUnlocked ? 'text-glow-green' : 'text-gray-500'}">${skill.name}</h3>
-                        <p class="text-xs font-sans text-gray-300 h-16">${isUnlocked ? skill.desc : 'Datos encriptados. Restaura los nodos Jefe para acceder.'}</p>
-                        <div class="mt-4 text-[10px] pixel-text ${isUnlocked ? 'text-green-400' : 'text-red-500'}">
-                            [ ${isUnlocked ? 'ACTIVO' : 'BLOQUEADO'} ]
-                        </div>
-                    `;
-                    els.skillsContainer.appendChild(el);
-                });
-            }
-
-            // Simple sound generator using Web Audio API for retro beeps
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            function playSound(type) {
-                if(audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+        function playTone(freq, type, duration, vol = 0.15) {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(ctx.destination);
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playCorrect() {
+            playTone(880, 'sine', 0.15, 0.12);
+            setTimeout(() => playTone(1100, 'sine', 0.12, 0.1), 80);
+        }
+
+        function playWrong() {
+            playTone(220, 'sawtooth', 0.25, 0.15);
+        }
+
+        function playCombo() {
+            [880, 1046, 1319].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.12, 0.1), i * 60));
+        }
+
+        function playTimerWarn() {
+            playTone(440, 'square', 0.08, 0.05);
+        }
+
+        // =============================================
+        // UI: SISTEMA DE VISTAS
+        // =============================================
+        window.setView = function(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+
+            if (viewName.startsWith('world')) {
+                state.currentView = 'quiz';
+                startQuiz(viewName);
+                document.getElementById('view-quiz').classList.add('active');
+            } else {
+                state.currentView = viewName;
+                const el = document.getElementById(`view-${viewName}`);
+                if (el) el.classList.add('active');
+                if (viewName === 'map') renderMap();
+                if (viewName === 'ranking') renderRanking();
+                if (viewName === 'home') updateHomeUI();
+                if (viewName === 'profile') renderProfile();
+            }
+            updateHUD();
+        };
+
+        function updateHUD() {
+            const expDiv = document.getElementById('hud-exp');
+            const streakDiv = document.getElementById('hud-streak');
+
+            if (state.playerProfile) {
+                expDiv.classList.remove('hidden');
+                expDiv.classList.add('flex');
+                document.getElementById('hud-exp-val').textContent = `${state.playerProfile.score} EXP`;
+
+                if (state.currentView === 'quiz' && state.quiz.streak > 0) {
+                    streakDiv.classList.remove('hidden');
+                    streakDiv.classList.add('flex');
+                    document.getElementById('hud-streak-val').textContent = `×${state.quiz.streak}`;
+                } else {
+                    streakDiv.classList.add('hidden');
+                    streakDiv.classList.remove('flex');
+                }
+            } else {
+                expDiv.classList.add('hidden'); expDiv.classList.remove('flex');
+                streakDiv.classList.add('hidden'); streakDiv.classList.remove('flex');
+            }
+        }
+
+        function updateHomeUI() {
+            const btnText = document.getElementById('btn-start-text');
+            const insertCoin = document.getElementById('home-insert-coin');
+            if (state.playerProfile) {
+                btnText.textContent = 'CONTINUAR SESIÓN';
+                if (insertCoin) insertCoin.style.display = 'none';
+            } else {
+                btnText.textContent = 'INICIAR ENLACE';
+                if (insertCoin) insertCoin.style.display = 'block';
+            }
+        }
+
+        window.handleStartClick = function() {
+            window.setView(state.playerProfile ? 'map' : 'register');
+        };
+
+        // =============================================
+        // MAPA DE MUNDOS
+        // =============================================
+        function renderMap() {
+            const container = document.getElementById('map-grid');
+            container.innerHTML = '';
+
+            const completed = state.playerProfile?.worldsCompleted || [];
+            const total = Object.keys(WORLDS).length;
+            const done = completed.length;
+
+            document.getElementById('global-progress-bar').style.width = `${(done/total)*100}%`;
+            document.getElementById('global-progress-text').textContent = `${done}/${total}`;
+
+            Object.values(WORLDS).forEach((world, idx) => {
+                const isCompleted = completed.includes(world.id);
+                const isUnlocked = world.unlockRequires.every(req => completed.includes(req));
+                const isBoss = world.id === 'world5';
+                const isLocked = !isUnlocked && !isCompleted;
+
+                const card = document.createElement('div');
+                card.className = `world-node relative p-5 border transition-all duration-300 group ${world.colorClasses} ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : 'available'} ${isBoss ? 'md:col-span-2 lg:col-span-3 lg:max-w-sm lg:mx-auto' : ''}`;
+                card.style.animationDelay = `${idx * 0.4}s`;
+                if (!isLocked) {
+                    card.style.animation = `float-stagger 4s ease-in-out ${idx * 0.4}s infinite`;
+                    card.onclick = () => window.showBriefing(world.id);
+                    card.setAttribute('role', 'listitem');
+                    card.setAttribute('tabindex', '0');
+                    card.setAttribute('aria-label', `Sector ${world.title}. ${isCompleted ? 'Completado.' : 'Disponible.'} ${world.questions.length} preguntas.`);
+                    card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') window.showBriefing(world.id); };
+                }
+
+                // Corner decorations
+                const corners = ['top-0 left-0 border-t border-l','top-0 right-0 border-t border-r','bottom-0 left-0 border-b border-l','bottom-0 right-0 border-b border-r'];
+                const cornerHTML = corners.map(c => `<div class="absolute ${c} w-2 h-2 border-current opacity-60"></div>`).join('');
+
+                let statusBadge = '';
+                if (isCompleted) {
+                    statusBadge = `<div class="absolute -top-2.5 -right-2.5 bg-black border border-current text-current px-2 py-0.5 text-[9px] font-bold tracking-widest rotate-6 flex items-center gap-1 z-10"><i class="ph-fill ph-check-circle"></i> PURGADO</div>`;
+                } else if (isLocked) {
+                    statusBadge = `<div class="absolute -top-2.5 -right-2.5 bg-black border border-slate-700 text-slate-600 px-2 py-0.5 text-[9px] font-bold tracking-widest rotate-6 flex items-center gap-1 z-10"><i class="ph-fill ph-lock"></i> BLOQUEADO</div>`;
+                }
+
+                let lockHint = '';
+                if (isLocked) {
+                    const reqNames = world.unlockRequires.map(id => WORLDS[id].title.split(':')[0]).join(', ');
+                    lockHint = `<p class="text-xs text-slate-600 mt-2 font-sans">Requiere: ${reqNames}</p>`;
+                }
+
+                card.innerHTML = `
+                    ${cornerHTML}
+                    ${statusBadge}
+                    <div class="flex items-start gap-4 mb-3">
+                        <div class="p-2.5 text-3xl bg-black/40 border border-current/40 shadow-[inset_0_0_8px_currentColor] ${isLocked ? '' : 'group-hover:bg-current group-hover:text-black transition-colors'}">
+                            <i class="ph-fill ${world.iconClass}" aria-hidden="true"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-white tracking-wider uppercase leading-tight">${world.title}</h3>
+                            <div class="text-xs tracking-widest opacity-60 mt-0.5 flex gap-2 flex-wrap">
+                                <span>${world.questions.length} nodos</span>
+                                <span>·</span>
+                                <span>${isCompleted ? '✓ Completado' : isLocked ? '⊘ Bloqueado' : '▷ Disponible'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs opacity-75 leading-relaxed mb-4 font-sans">${world.description}</p>
+                    ${lockHint}
+                    ${!isLocked ? `<div class="flex justify-end">
+                        <span class="text-xs border-b border-transparent ${isCompleted ? '' : 'group-hover:border-current'} transition-colors flex items-center gap-1">
+                            ${isCompleted ? 'REINTENTAR SECTOR' : 'VER INTEL Y COMENZAR'} <i class="ph-bold ph-caret-right" aria-hidden="true"></i>
+                        </span>
+                    </div>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // =============================================
+        // BRIEFING / INTEL ENGINE (NUEVO)
+        // =============================================
+        window.showBriefing = function(worldId) {
+            const world = WORLDS[worldId];
+            const briefingContainer = document.getElementById('briefing-content');
+            
+            // Auto-generar el "Intel" basándonos en las explicaciones y respuestas correctas
+            let intelHTML = world.questions.map((q, idx) => {
+                const correctText = q.options[q.correct];
+                return `
+                    <div class="mb-4 bg-slate-900/40 border-l-2 p-4 font-sans relative overflow-hidden group" style="border-color: ${world.colorHex}">
+                        <div class="absolute inset-0 bg-gradient-to-r from-[${world.colorHex}]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        <h4 class="font-bold text-sm mb-2 uppercase tracking-wider flex items-center gap-2" style="color: ${world.colorHex}">
+                            <i class="ph-bold ph-folder-open"></i> ARCHIVO_${String(idx+1).padStart(2, '0')} // ${correctText}
+                        </h4>
+                        <p class="text-slate-300 text-sm leading-relaxed">${q.explanation}</p>
+                    </div>
+                `;
+            }).join('');
+
+            briefingContainer.innerHTML = `
+                <div class="mb-6 flex items-end gap-4 border-b border-slate-800 pb-4">
+                    <div class="p-4 text-5xl bg-black/40 border shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]" style="border-color: ${world.colorHex}50; color: ${world.colorHex}">
+                        <i class="ph-fill ${world.iconClass} animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white tracking-widest uppercase" style="font-family:'Orbitron',monospace">${world.title}</h2>
+                        <p class="text-xs tracking-widest mt-1" style="color: ${world.colorHex}">MÓDULO DE INTELIGENCIA PRE-MISIÓN [LECTURA OBLIGATORIA]</p>
+                    </div>
+                </div>
                 
-                if(type === 'start') {
-                    osc.type = 'square'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-                } else if(type === 'hit') {
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-                } else if(type === 'error') {
-                    osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                    osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-                } else if(type === 'typing') {
-                    // Very short subtle click
-                    osc.type = 'square'; osc.frequency.setValueAtTime(800 + Math.random()*200, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.02, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+                <div class="bg-[#050508] border border-slate-800 p-5 sm:p-7 mb-6 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                    <div class="absolute top-0 right-0 p-1 text-[10px] tracking-widest border-b border-l border-slate-800 text-slate-600 bg-black">SYS.DATABANK</div>
+                    <div class="text-xs text-slate-500 tracking-widest mb-5 border-b border-slate-800 pb-3 flex justify-between items-center">
+                        <span class="flex items-center gap-2"><i class="ph-bold ph-lock-key-open text-emerald-500"></i> DATOS DESENCRIPTADOS</span>
+                        <span>NODOS TEÓRICOS: ${world.questions.length}</span>
+                    </div>
+                    
+                    <!-- Contenedor con scroll para la teoría -->
+                    <div class="max-h-[50vh] overflow-y-auto pr-3">
+                        ${intelHTML}
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                    <button onclick="window.setView('map')" class="btn-retro py-3.5 px-6 font-bold border border-slate-700 text-slate-400 hover:bg-slate-800 flex-1 text-sm text-center transition-colors">
+                        <i class="ph-bold ph-caret-left mr-1"></i> VOLVER AL MAPA
+                    </button>
+                    <button onclick="window.setView('${worldId}')" class="btn-retro py-3.5 px-6 font-bold border hover:text-black flex-1 text-sm text-center transition-all group overflow-hidden relative" style="background-color: ${world.colorHex}15; border-color: ${world.colorHex}; color: ${world.colorHex}">
+                        <span class="absolute inset-0 transition-transform duration-300 translate-y-full group-hover:translate-y-0" style="background-color: ${world.colorHex}; z-index: 0;"></span>
+                        <span class="relative z-10 flex items-center justify-center gap-2">
+                            INICIAR INFILTRACIÓN <i class="ph-bold ph-crosshair"></i>
+                        </span>
+                    </button>
+                </div>
+            `;
+            
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-briefing').classList.add('active');
+            state.currentView = 'briefing';
+            updateHUD();
+        };
+
+        // =============================================
+        // QUIZ ENGINE
+        // =============================================
+        function startQuiz(worldId) {
+            if (state.quiz.timerId) clearInterval(state.quiz.timerId);
+            state.quiz = {
+                worldId, currentQIndex: 0, score: 0,
+                selectedAnswer: null, isCorrect: null,
+                streak: 0, maxStreak: 0,
+                timeLeft: 30, timerId: null,
+                perfect: true, speedStreak: 0,
+                answeredAt: [],
+                startedAt: Date.now(),
+            };
+
+            const world = WORLDS[worldId];
+
+            document.getElementById('quiz-bg-icon').innerHTML = `<i class="ph-fill ${world.iconClass}"></i>`;
+            document.getElementById('quiz-main-icon').innerHTML = `<i class="ph-fill ${world.iconClass}" style="color:${world.colorHex}"></i>`;
+            document.getElementById('quiz-objective-title').textContent = world.title;
+
+            document.getElementById('quiz-mobile-icon').innerHTML = `<i class="ph-fill ${world.iconClass}" style="color:${world.colorHex}"></i>`;
+            document.getElementById('quiz-mobile-title').textContent = world.title;
+
+            document.getElementById('quiz-side-panel').style.color = world.colorHex;
+            document.getElementById('quiz-scanner').style.backgroundColor = world.colorHex;
+            document.getElementById('quiz-progress-bar').style.backgroundColor = world.colorHex;
+            document.getElementById('quiz-progress-text').style.color = world.colorHex;
+            document.getElementById('quiz-question-accent').style.backgroundColor = world.colorHex;
+
+            document.getElementById('timer-bar').style.background = `linear-gradient(90deg, ${world.colorHex}, ${world.colorHex}99)`;
+
+            renderQuestion();
+        }
+
+        function startTimer() {
+            if (state.quiz.timerId) clearInterval(state.quiz.timerId);
+            const timerBar = document.getElementById('timer-bar');
+            const timerWrap = document.getElementById('timer-bar-wrap');
+            const timerLabel = document.getElementById('timer-label');
+            state.quiz.timeLeft = 30;
+
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            timerWrap.className = timerWrap.className.replace(/timer-warning|timer-critical/g, '').trim();
+            setTimeout(() => {
+                timerBar.style.transition = 'width 1s linear';
+            }, 50);
+
+            state.quiz.timerId = setInterval(() => {
+                state.quiz.timeLeft--;
+                timerLabel.textContent = `${state.quiz.timeLeft}s`;
+                const pct = (state.quiz.timeLeft / 30) * 100;
+                timerBar.style.width = pct + '%';
+
+                if (state.quiz.timeLeft <= 10 && state.quiz.timeLeft > 5) {
+                    timerWrap.className = 'w-full h-1.5 bg-black border border-slate-900 mb-4 overflow-hidden timer-warning';
+                    if (state.quiz.timeLeft % 3 === 0) playTimerWarn();
+                }
+                if (state.quiz.timeLeft <= 5) {
+                    timerWrap.className = 'w-full h-1.5 bg-black border border-slate-900 mb-4 overflow-hidden timer-critical';
+                    playTimerWarn();
+                }
+                if (state.quiz.timeLeft <= 0) {
+                    clearInterval(state.quiz.timerId);
+                    window.handleAnswer(-1); // -1 = timeout
+                }
+            }, 1000);
+        }
+
+        function renderQuestion() {
+            const world = WORLDS[state.quiz.worldId];
+            const q = world.questions[state.quiz.currentQIndex];
+            const progress = (state.quiz.currentQIndex / world.questions.length) * 100;
+
+            document.getElementById('quiz-progress-text').textContent = `NODO ${state.quiz.currentQIndex + 1}/${world.questions.length}`;
+            document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
+            document.getElementById('quiz-score-val').textContent = state.quiz.score;
+
+            document.getElementById('quiz-question-text').textContent = q.q;
+
+            const feedbackWrap = document.getElementById('quiz-feedback-wrap');
+            feedbackWrap.classList.add('hidden');
+            document.getElementById('quiz-explanation').classList.add('hidden');
+
+            const optionsContainer = document.getElementById('quiz-options-container');
+            optionsContainer.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                let btnClass = 'bg-[#0a0a1a] border border-slate-800 text-slate-300 hover:border-slate-500 hover:bg-slate-900/50';
+                let iconHTML = `<span class="text-xs font-bold opacity-40 w-5 flex-shrink-0">${letters[idx]}</span>`;
+
+                if (state.quiz.selectedAnswer !== null) {
+                    if (idx === q.correct) {
+                        btnClass = 'bg-emerald-950/50 border-emerald-500 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.2)]';
+                        iconHTML = `<i class="ph-fill ph-check-circle text-emerald-400 flex-shrink-0" aria-label="Correcto"></i>`;
+                    } else if (idx === state.quiz.selectedAnswer) {
+                        btnClass = 'bg-rose-950/50 border-rose-500 text-rose-200 shadow-[0_0_12px_rgba(239,68,68,0.2)]';
+                        iconHTML = `<i class="ph-fill ph-warning-circle text-rose-400 flex-shrink-0" aria-label="Incorrecto"></i>`;
+                    } else {
+                        btnClass = 'bg-[#050508] border-slate-900 text-slate-700 opacity-30 pointer-events-none';
+                    }
+                    btn.disabled = true;
+                }
+
+                btn.className = `w-full text-left px-4 py-3.5 border flex items-center gap-3 font-sans text-sm transition-all duration-200 ${btnClass}`;
+                btn.onclick = () => window.handleAnswer(idx);
+                btn.innerHTML = `${iconHTML}<span>${opt}</span>`;
+                optionsContainer.appendChild(btn);
+            });
+
+            startTimer();
+        }
+
+        window.handleAnswer = function(index) {
+            if (state.quiz.selectedAnswer !== null) return;
+            clearInterval(state.quiz.timerId);
+
+            const world = WORLDS[state.quiz.worldId];
+            const q = world.questions[state.quiz.currentQIndex];
+            const isCorrect = index === q.correct;
+            const timeUsed = 30 - state.quiz.timeLeft;
+
+            state.quiz.selectedAnswer = index;
+            state.quiz.isCorrect = isCorrect;
+            state.quiz.answeredAt.push({ q: state.quiz.currentQIndex, correct: isCorrect, time: timeUsed });
+
+            if (isCorrect) {
+                const timeBonus = state.quiz.timeLeft > 20 ? 25 : state.quiz.timeLeft > 10 ? 10 : 0;
+                const streakBonus = state.quiz.streak >= 2 ? Math.min(state.quiz.streak * 10, 50) : 0;
+                const earned = 100 + timeBonus + streakBonus;
+                
+                state.quiz.score += earned;
+                state.quiz.streak++;
+                state.quiz.maxStreak = Math.max(state.quiz.maxStreak, state.quiz.streak);
+
+                if (timeUsed < 5) state.quiz.speedStreak++;
+                else state.quiz.speedStreak = 0;
+
+                playCorrect();
+                if (state.quiz.streak >= 3) {
+                    playCombo();
+                    showStreakDisplay(state.quiz.streak);
+                }
+                document.getElementById('quiz-score-val').textContent = state.quiz.score;
+            } else {
+                state.quiz.streak = 0;
+                state.quiz.speedStreak = 0;
+                state.quiz.perfect = false;
+                playWrong();
+
+                const viewQuiz = document.getElementById('view-quiz');
+                viewQuiz.classList.add('glitch-anim');
+                setTimeout(() => viewQuiz.classList.remove('glitch-anim'), 400);
+            }
+
+            showFeedback(isCorrect, index === -1, q.explanation);
+
+            const optBtns = document.getElementById('quiz-options-container').children;
+            Array.from(optBtns).forEach((btn, idx) => {
+                if (idx === q.correct) {
+                    btn.className = 'w-full text-left px-4 py-3.5 border flex items-center gap-3 font-sans text-sm transition-all duration-200 bg-emerald-950/50 border-emerald-500 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.2)]';
+                    btn.querySelector('span:first-child, i:first-child').outerHTML = `<i class="ph-fill ph-check-circle text-emerald-400 flex-shrink-0"></i>`;
+                } else if (idx === index) {
+                    btn.className = 'w-full text-left px-4 py-3.5 border flex items-center gap-3 font-sans text-sm transition-all duration-200 bg-rose-950/50 border-rose-500 text-rose-200 shadow-[0_0_12px_rgba(239,68,68,0.2)]';
+                } else {
+                    btn.className = 'w-full text-left px-4 py-3.5 border flex items-center gap-3 font-sans text-sm transition-all duration-200 bg-[#050508] border-slate-900 text-slate-700 opacity-30 pointer-events-none';
+                }
+                btn.disabled = true;
+            });
+
+            updateHUD();
+
+            setTimeout(() => {
+                if (state.quiz.currentQIndex < world.questions.length - 1) {
+                    state.quiz.currentQIndex++;
+                    state.quiz.selectedAnswer = null;
+                    state.quiz.isCorrect = null;
+                    renderQuestion();
+                } else {
+                    showQuizResult();
+                }
+            }, 2200);
+        };
+
+        function showFeedback(isCorrect, isTimeout, explanation) {
+            const wrap = document.getElementById('quiz-feedback-wrap');
+            const feedback = document.getElementById('quiz-feedback');
+            const expDiv = document.getElementById('quiz-explanation');
+            const expText = document.getElementById('quiz-explanation-text');
+
+            wrap.classList.remove('hidden');
+
+            if (isTimeout) {
+                feedback.className = 'p-3 text-center tracking-widest text-xs border font-bold mb-2 bg-amber-950/50 border-amber-500 text-amber-400';
+                feedback.textContent = '⚠ TIEMPO AGOTADO ⚠';
+            } else if (isCorrect) {
+                const msgs = ['>>> OVERRIDE EXITOSO <<<', '>> ACCESO CONCEDIDO <<', '/// DATOS EXTRAÍDOS ///', '=== NODO NEUTRALIZADO ==='];
+                feedback.className = 'p-3 text-center tracking-widest text-xs border font-bold mb-2 bg-emerald-950/50 border-emerald-500 text-emerald-400';
+                feedback.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            } else {
+                const msgs = ['!!! BRECHA DETECTADA !!!', '!!! INTRUSIÓN FALLIDA !!!', '--- SISTEMA ALERTA ---'];
+                feedback.className = 'p-3 text-center tracking-widest text-xs border font-bold mb-2 bg-rose-950/50 border-rose-500 text-rose-400';
+                feedback.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            }
+
+            if (explanation) {
+                expDiv.classList.remove('hidden');
+                expText.textContent = explanation;
+            }
+        }
+
+        function showStreakDisplay(streak) {
+            const el = document.getElementById('streak-display');
+            el.innerHTML = `<div class="combo-pop bg-black border border-orange-500 text-orange-400 px-4 py-2 text-sm font-bold tracking-widest shadow-[0_0_15px_rgba(251,146,60,0.4)]">
+                <i class="ph-fill ph-fire mr-1"></i> RACHA ×${streak}!
+            </div>`;
+            setTimeout(() => { el.innerHTML = ''; }, 1800);
+        }
+
+        function showQuizResult() {
+            const world = WORLDS[state.quiz.worldId];
+            const totalPossible = world.questions.length * 100;
+            const accuracy = Math.round((state.quiz.score / (world.questions.length * 100 + world.questions.length * 35)) * 100);
+            const accuracyCapped = Math.min(accuracy, 100);
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-quiz-result').classList.add('active');
+
+            const card = document.getElementById('result-card');
+            const iconContainer = document.getElementById('result-icon-container');
+            const pulseBg = document.getElementById('result-pulse-bg');
+            const btnFinish = document.getElementById('btn-finish-world');
+
+            const isPerfect = state.quiz.perfect && state.quiz.score >= totalPossible;
+
+            card.style.borderColor = isPerfect ? '#fbbf24' : world.colorHex;
+            pulseBg.style.backgroundColor = isPerfect ? '#fbbf24' : world.colorHex;
+
+            if (isPerfect) {
+                iconContainer.innerHTML = `<i class="ph-fill ph-trophy text-[4.5rem] text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]"></i>`;
+                playCombo();
+            } else {
+                iconContainer.innerHTML = `<i class="ph-fill ${world.iconClass} text-[4.5rem]" style="color:${world.colorHex}"></i>`;
+            }
+
+            document.getElementById('result-world-name').textContent = `Infiltración: ${world.title}`;
+            document.getElementById('result-score').textContent = state.quiz.score;
+
+            document.getElementById('result-accuracy').textContent = `${accuracyCapped}%`;
+            setTimeout(() => {
+                document.getElementById('result-accuracy-bar').style.width = `${accuracyCapped}%`;
+            }, 100);
+
+            btnFinish.style.borderColor = isPerfect ? '#fbbf24' : world.colorHex;
+            btnFinish.style.color = isPerfect ? '#fbbf24' : world.colorHex;
+            btnFinish.onmouseover = () => { btnFinish.style.backgroundColor = isPerfect ? '#fbbf24' : world.colorHex; btnFinish.style.color = '#000'; };
+            btnFinish.onmouseout = () => { btnFinish.style.backgroundColor = ''; btnFinish.style.color = isPerfect ? '#fbbf24' : world.colorHex; };
+
+            document.getElementById('btn-retry-world').style.borderColor = world.colorHex + '30';
+
+            checkAchievements(state.quiz);
+        }
+
+        window.handleFinishWorld = async function() {
+            if (!state.user || !state.playerProfile) return;
+
+            const alreadyCompleted = state.playerProfile.worldsCompleted.includes(state.quiz.worldId);
+            const newTotalScore = (state.playerProfile.score || 0) + state.quiz.score;
+
+            // Manejo en Modo Local
+            if (isLocalMode) {
+                if (!alreadyCompleted) {
+                    state.playerProfile.worldsCompleted.push(state.quiz.worldId);
+                }
+                state.playerProfile.score = newTotalScore;
+                localStorage.setItem('redquest_data', JSON.stringify(state.playerProfile));
+                window.setView('map');
+                return;
+            }
+
+            // Manejo con Firebase
+            try {
+                const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'rankings', state.user.uid);
+                const updates = { score: newTotalScore };
+                if (!alreadyCompleted) {
+                    updates.worldsCompleted = [...state.playerProfile.worldsCompleted, state.quiz.worldId];
+                }
+                await updateDoc(profileRef, updates);
+            } catch(e) {
+                console.warn('Score update failed:', e);
+            }
+            window.setView('map');
+        };
+
+        window.handleRetryWorld = function() {
+            window.setView(state.quiz.worldId);
+        };
+
+        window.confirmAbort = function() {
+            if (state.quiz.selectedAnswer !== null || state.quiz.currentQIndex === 0) {
+                if (state.quiz.timerId) clearInterval(state.quiz.timerId);
+                window.setView('map');
+            } else {
+                if (confirm('¿Abandonar la misión? Perderás el progreso de este intento.')) {
+                    if (state.quiz.timerId) clearInterval(state.quiz.timerId);
+                    window.setView('map');
+                }
+            }
+        };
+
+        // =============================================
+        // SISTEMA DE LOGROS
+        // =============================================
+        function checkAchievements(quizState) {
+            if (!state.playerProfile) return;
+            const unlocked = state.playerProfile.achievements || [];
+            let newAchievement = null;
+
+            for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
+                if (!unlocked.includes(id) && ach.condition(state.playerProfile, quizState)) {
+                    newAchievement = ach;
+                    unlocked.push(id);
+                    break;
                 }
             }
 
-            return { init, start, switchView, closeDialog };
-        })();
+            if (newAchievement) {
+                showAchievementToast(newAchievement);
+                const resultAch = document.getElementById('result-achievement');
+                const resultAchName = document.getElementById('result-achievement-name');
+                if (resultAch && resultAchName) {
+                    resultAch.classList.remove('hidden');
+                    resultAchName.textContent = `${newAchievement.name} — ${newAchievement.desc}`;
+                }
 
-        // Initialize on load
-        window.onload = Game.init;
+                // Guardar logro
+                if (isLocalMode) {
+                    state.playerProfile.achievements = unlocked;
+                    localStorage.setItem('redquest_data', JSON.stringify(state.playerProfile));
+                } else if (state.user) {
+                    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'rankings', state.user.uid);
+                    updateDoc(profileRef, { achievements: unlocked }).catch(() => {});
+                }
+            } else {
+                const resultAch = document.getElementById('result-achievement');
+                if (resultAch) resultAch.classList.add('hidden');
+            }
+        }
+
+        function showAchievementToast(ach) {
+            const toast = document.getElementById('achievement-toast');
+            document.getElementById('achievement-name').textContent = ach.name;
+            document.getElementById('achievement-desc').textContent = ach.desc;
+            toast.style.display = 'block';
+            toast.classList.add('achievement-slide');
+            playCombo();
+            setTimeout(() => {
+                toast.style.display = 'none';
+                toast.classList.remove('achievement-slide');
+            }, 4000);
+        }
+
+        // =============================================
+        // PERFIL Y RANKING
+        // =============================================
+        function renderProfile() {
+            const container = document.getElementById('profile-content');
+            if (!state.playerProfile) {
+                container.innerHTML = `<div class="col-span-2 text-center text-slate-600 py-12">
+                    <i class="ph-fill ph-user-circle text-4xl mb-3"></i>
+                    <p class="tracking-widest text-sm">No hay sesión activa. Inicia el enlace para crear tu perfil.</p>
+                </div>`;
+                return;
+            }
+
+            const p = state.playerProfile;
+            const completed = p.worldsCompleted || [];
+            const achUnlocked = p.achievements || [];
+            const rank = state.rankingData.findIndex(r => r.id === p.id) + 1;
+
+            container.innerHTML = `
+                <!-- Card principal -->
+                <div class="bg-[#0a0a1a] border border-cyan-900/50 p-6 col-span-1 sm:col-span-2 relative">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
+                    <div class="flex items-center gap-4 pl-2">
+                        <div class="w-12 h-12 border border-cyan-500 flex items-center justify-center text-cyan-400 font-bold text-lg shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+                            ${p.name.substring(0,2)}
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white tracking-widest" style="font-family:'Orbitron',monospace">${p.name}</h3>
+                            <div class="text-xs text-cyan-600 tracking-wider mt-0.5">${isLocalMode ? 'Rango: Offline' : 'Rango global: #' + rank}</div>
+                        </div>
+                        <div class="ml-auto text-right">
+                            <div class="text-2xl font-bold text-yellow-400">${p.score || 0}</div>
+                            <div class="text-xs text-yellow-700">EXP TOTAL</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Progreso de mundos -->
+                <div class="bg-[#0a0a1a] border border-slate-800 p-5">
+                    <h4 class="text-xs text-slate-500 tracking-widest mb-4 uppercase">Sectores</h4>
+                    <div class="space-y-2">
+                        ${Object.values(WORLDS).map(w => `
+                            <div class="flex items-center gap-3">
+                                <i class="ph-fill ${w.iconClass} text-sm" style="color:${completed.includes(w.id) ? w.colorHex : '#334155'}"></i>
+                                <span class="text-xs flex-1 ${completed.includes(w.id) ? 'text-slate-300' : 'text-slate-600'}">${w.title.split(':')[1]?.trim() || w.title}</span>
+                                ${completed.includes(w.id) ? `<span class="text-xs text-emerald-500 tracking-wider">✓ PURGADO</span>` : `<span class="text-xs text-slate-700">PENDIENTE</span>`}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <!-- Logros -->
+                <div class="bg-[#0a0a1a] border border-slate-800 p-5">
+                    <h4 class="text-xs text-slate-500 tracking-widest mb-4 uppercase">Logros (${achUnlocked.length}/${Object.keys(ACHIEVEMENTS).length})</h4>
+                    <div class="space-y-2">
+                        ${Object.values(ACHIEVEMENTS).map(ach => {
+                            const isUnlocked = achUnlocked.includes(ach.id);
+                            return `<div class="flex items-center gap-2 ${isUnlocked ? '' : 'opacity-30'}">
+                                <i class="ph-fill ${ach.icon} text-sm ${isUnlocked ? 'text-yellow-400' : 'text-slate-600'}"></i>
+                                <div>
+                                    <div class="text-xs font-bold ${isUnlocked ? 'text-white' : 'text-slate-600'}">${ach.name}</div>
+                                    <div class="text-xs text-slate-600">${ach.desc}</div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRanking() {
+            const tbody = document.getElementById('ranking-tbody');
+            tbody.innerHTML = '';
+
+            if (isLocalMode) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 tracking-widest text-xs">[ RANKING GLOBAL NO DISPONIBLE EN MODO OFFLINE ]</td></tr>`;
+                return;
+            }
+
+            if (state.rankingData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-700 tracking-widest text-xs">[ BASE DE DATOS VACÍA ]</td></tr>`;
+                return;
+            }
+
+            state.rankingData.forEach((player, idx) => {
+                const isMe = state.playerProfile?.id === player.id;
+                let posHTML = `<span class="text-slate-600 text-sm">${idx + 1}</span>`;
+                if (idx === 0) posHTML = `<span class="text-yellow-400 font-bold">#1</span>`;
+                else if (idx === 1) posHTML = `<span class="text-slate-300 font-bold">#2</span>`;
+                else if (idx === 2) posHTML = `<span class="text-amber-700 font-bold">#3</span>`;
+
+                let worldsHTML = '';
+                if (player.worldsCompleted?.length > 0) {
+                    player.worldsCompleted.forEach(w => {
+                        const world = WORLDS[w];
+                        if (world) worldsHTML += `<div class="w-2.5 h-2.5 rounded-sm shadow-[0_0_4px_currentColor]" style="background-color:${world.colorHex}" title="${world.title}"></div>`;
+                    });
+                } else {
+                    worldsHTML = `<span class="text-slate-800 text-xs">—</span>`;
+                }
+
+                const row = document.createElement('tr');
+                row.className = `transition-colors hover:bg-slate-900/30 ${isMe ? 'bg-cyan-950/15' : ''}`;
+                row.innerHTML = `
+                    <td class="p-3 text-center">${posHTML}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 flex items-center justify-center text-xs border flex-shrink-0 ${isMe ? 'border-cyan-400 text-cyan-400' : 'border-slate-700 text-slate-600'}">
+                                ${player.name.substring(0, 2)}
+                            </div>
+                            <span class="font-bold text-sm tracking-wide ${isMe ? 'text-cyan-300' : 'text-slate-300'}">
+                                ${player.name} ${isMe ? '<span class="text-xs text-cyan-700 ml-1">[TÚ]</span>' : ''}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center hidden sm:table-cell">
+                        <div class="flex items-center justify-center gap-1">${worldsHTML}</div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <span class="text-white font-bold text-sm">${player.score}</span>
+                        <span class="text-yellow-700 text-xs ml-1">EXP</span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // =============================================
+        // INICIO DE SESIÓN Y CARGA
+        // =============================================
+        const bootMessages = [
+            'Inicializando kernel...', 'Verificando integridad...', 'Evaluando estado de red...',
+            'Cargando protocolos tácticos...', 'Sistema listo.'
+        ];
+        let bootIdx = 0;
+        const bootLog = document.getElementById('boot-log');
+        const bootInterval = setInterval(() => {
+            if (bootIdx < bootMessages.length) {
+                bootLog.textContent = bootMessages[bootIdx++];
+            }
+        }, 300);
+
+        async function initAuth() {
+            // Manejo especial si estamos en Modo Local
+            if (isLocalMode) {
+                clearInterval(bootInterval);
+                state.user = { uid: 'local_agent' };
+                
+                // Intentar recuperar progreso guardado localmente
+                const savedData = localStorage.getItem('redquest_data');
+                if (savedData) {
+                    try {
+                        state.playerProfile = JSON.parse(savedData);
+                        state.rankingData = [state.playerProfile];
+                    } catch(e) {}
+                }
+
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('app-content').style.display = 'flex';
+                    window.setView('home');
+                }, 800);
+                return;
+            }
+
+            // Manejo normal de Firebase Auth
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error('Auth Error, cayendo a modo local:', error);
+                isLocalMode = true;
+                initAuth(); // Reintenta como local
+                return;
+            }
+
+            onAuthStateChanged(auth, (currentUser) => {
+                clearInterval(bootInterval);
+                state.user = currentUser;
+                if (currentUser && !isLocalMode) listenToRankings();
+
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('app-content').style.display = 'flex';
+                    window.setView('home');
+                }, 200);
+            });
+        }
+
+        function listenToRankings() {
+            if (!state.user || isLocalMode) return;
+            const rankingRef = collection(db, 'artifacts', appId, 'public', 'data', 'rankings');
+
+            onSnapshot(rankingRef, (snapshot) => {
+                const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                data.sort((a, b) => (b.score || 0) - (a.score || 0));
+                state.rankingData = data;
+
+                const myProfile = data.find(p => p.id === state.user.uid);
+                if (myProfile) state.playerProfile = myProfile;
+
+                updateHUD();
+                if (state.currentView === 'ranking') renderRanking();
+                if (state.currentView === 'map') renderMap();
+                if (state.currentView === 'home') updateHomeUI();
+                if (state.currentView === 'profile') renderProfile();
+            }, (error) => console.error('Ranking Sync Error:', error));
+        }
+
+        window.handleRegisterSubmit = async function() {
+            const nameInput = document.getElementById('input-agent-name').value.trim().toUpperCase();
+            const errorEl = document.getElementById('register-error');
+
+            if (!nameInput) {
+                errorEl.textContent = 'El identificador no puede estar vacío.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!/^[A-Z0-9_]{1,15}$/.test(nameInput)) {
+                errorEl.textContent = 'Solo letras, números y guiones bajos. Máx. 15 caracteres.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            errorEl.classList.add('hidden');
+            if (!state.user) return;
+
+            // Manejo Local
+            if (isLocalMode) {
+                state.playerProfile = {
+                    id: state.user.uid,
+                    name: nameInput, score: 0, worldsCompleted: [],
+                    achievements: [], joinedAt: new Date().toISOString()
+                };
+                state.rankingData = [state.playerProfile];
+                localStorage.setItem('redquest_data', JSON.stringify(state.playerProfile));
+                window.setView('map');
+                return;
+            }
+
+            // Manejo Firebase
+            try {
+                const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'rankings', state.user.uid);
+                await setDoc(profileRef, {
+                    name: nameInput, score: 0, worldsCompleted: [],
+                    achievements: [], joinedAt: new Date().toISOString()
+                });
+                window.setView('map');
+            } catch (error) {
+                errorEl.textContent = 'Error al crear el perfil en servidor. Verifica conexión.';
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        // Iniciar — los módulos ES se ejecutan después del DOM, así que llamamos directo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAuth);
+        } else {
+            initAuth();
+        }
+
     </script>
 </body>
 </html>
